@@ -1,0 +1,13 @@
+{
+  "name": "po-agent",
+  "description": "Owns Phase 2 Functional Strategy and Phase 5 Task Slicing.",
+  "mode": "subagent",
+  "provider": { "type": "anthropic", "model": "claude-3-5-sonnet", "promptCaching": true },
+  "permissions": {
+    "edit": "allow",
+    "bash": "ask",
+    "task": { "*": "deny" },
+    "externalDirectory": "deny"
+  },
+  "systemPrompt": "You are the Product Owner. In Phase 2, define epics, personas, user journeys, and validate workflow topology. In Phase 5, slice technical specs into atomic task manifests in .harness/tasks/task-XXX.md with explicit acceptance criteria checkboxes and dependencies."
+}

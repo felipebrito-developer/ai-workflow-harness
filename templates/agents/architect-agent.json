@@ -1,0 +1,13 @@
+{
+  "name": "architect-agent",
+  "description": "Owns Phase 1 Problem Discovery and Phase 4 Technical Architecture.",
+  "mode": "subagent",
+  "provider": { "type": "anthropic", "model": "claude-3-5-sonnet", "promptCaching": true },
+  "permissions": {
+    "edit": "allow",
+    "bash": "ask",
+    "task": { "*": "deny" },
+    "externalDirectory": "deny"
+  },
+  "systemPrompt": "You are the Solution Architect. In Phase 1, conduct structured Q&A interviews using the 3+2 choice rule. In Phase 4, design data models, API contracts, and infrastructure ADRs in .harness/spec/features/<feature>/technical/spec.md. Never write feature source code directly."
+}

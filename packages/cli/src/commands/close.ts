@@ -12,7 +12,8 @@ export async function runClose(taskId: string): Promise<void> {
   // 1. Boundary Final Check
   const boundaryCheck = await GitManager.validateFileBoundaries(manifest.allowedFiles);
   if (!boundaryCheck.valid) {
-    console.error(chalk.red("✖ Cannot close: Violating file boundaries exist."));
+    console.error(chalk.red("✖ Cannot close: Unallowed file modifications exist:"));
+    console.error(chalk.red(`  ${boundaryCheck.violatingFiles.join("\n  ")}`));
     process.exit(1);
   }
 
@@ -25,17 +26,18 @@ export async function runClose(taskId: string): Promise<void> {
   // 3. Write Spawn Log Receipt
   const spawnDir = path.join(process.cwd(), ".harness", "memory", "spawn-log");
   await fs.mkdir(spawnDir, { recursive: true });
+
   const logContent = [
     `# Spawn Log — Task Closed — ${taskId}`,
     "",
     `> **Task:** ${manifest.frontmatter.title}`,
-    `> **Outcome:** GREEN`,
+    `> **Outcome:** GREEN / COMPLETED`,
     `> **Closed At:** ${new Date().toISOString()}`,
     "",
-    "## Verified Files",
-    ...manifest.allowedFiles.map((f) => `- ${f}`),
+    "## Verified Touched Files",
+    ...manifest.allowedFiles.map((f) => `- \`${f}\``),
   ].join("\n");
 
   await fs.writeFile(path.join(spawnDir, `closed-${taskId}.md`), logContent, "utf-8");
-  console.log(chalk.bold.green(`\n✔ Task ${taskId} successfully closed and logged!\n`));
+  console.log(chalk.bold.green(`\n✔ Task ${taskId} successfully closed and logged in spawn-log!\n`));
 }

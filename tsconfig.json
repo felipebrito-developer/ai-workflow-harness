@@ -6,6 +6,7 @@
     "strict": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "types": ["node", "bun-types"],
     "noEmit": true,
     "paths": {
       "@harness/*": ["./packages/*/src"]

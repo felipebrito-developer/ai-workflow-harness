@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import chalk from "chalk";
-import { execa } from "execa";
+import { execaCommand } from "execa";
 import { CircuitBreaker } from "../engines/circuit-breaker.js";
 import { ErrorSanitizer } from "../engines/error-sanitizer.js";
 import { GitManager } from "../engines/git-manager.js";
@@ -9,71 +9,75 @@ import { parseTaskManifest } from "../parsers/task-parser.js";
 import type { HarnessConfig } from "../schemas/harness-config.schema.js";
 
 export async function runVerify(taskId: string): Promise<void> {
-  const cwd = process.cwd();
-  const configPath = path.join(cwd, ".harness", "harness.config.json");
-  const taskFilePath = path.join(cwd, ".harness", "tasks", `${taskId}.md`);
-
-  const rawConfig = await fs.readFile(configPath, "utf-8");
-  const config: HarnessConfig = JSON.parse(rawConfig);
+  const taskFilePath = path.join(process.cwd(), ".harness", "tasks", `${taskId}.md`);
   const manifest = await parseTaskManifest(taskFilePath);
 
-  console.log(chalk.bold.cyan(`\n⚡ Executing Verification Gate: ${taskId}\n`));
+  console.log(chalk.bold.cyan(`\n🧪 Verifying Task: ${manifest.frontmatter.id}\n`));
 
-  // 1. Check Boundary Violations
+  // 1. File Boundary Gate Check
   const boundaryCheck = await GitManager.validateFileBoundaries(manifest.allowedFiles);
   if (!boundaryCheck.valid) {
     console.error(chalk.red("✖ File Boundary Violation Detected!"));
     console.error(
-      chalk.yellow(
-        `The following files were modified outside allowed boundaries:\n${boundaryCheck.violatingFiles
-          .map((f) => `  - ${f}`)
-          .join("\n")}`
-      )
+      chalk.red(`  Modified out-of-scope files:\n  ${boundaryCheck.violatingFiles.join("\n  ")}`)
     );
     process.exit(1);
   }
   console.log(chalk.green("✔ File boundaries respected."));
 
-  // 2. Run Verification Commands
-  for (const cmdString of manifest.verificationCommands) {
-    console.log(chalk.dim(`- Running: ${cmdString}`));
-    try {
-      await execa(cmdString, { shell: true, stdio: "pipe" });
-      console.log(chalk.green(`  ✔ Passed: ${cmdString}`));
-    } catch (err: any) {
-      const sanitized = ErrorSanitizer.sanitize(cmdString, err.stderr || "", err.stdout || "");
-      const errorCard = ErrorSanitizer.formatErrorCard(sanitized);
-      console.error(chalk.red(`\n${errorCard}\n`));
+  // 2. Load Config for Circuit Breaker limit
+  let configLimit = 3;
+  try {
+    const rawConfig = await fs.readFile(
+      path.join(process.cwd(), ".harness", "harness.config.json"),
+      "utf-8"
+    );
+    const cfg: HarnessConfig = JSON.parse(rawConfig);
+    configLimit = cfg.circuitBreakerLimit || 3;
+  } catch {}
 
+  // 3. Execute Verification Commands
+  for (const cmd of manifest.verificationCommands) {
+    console.log(chalk.dim(`- Executing: ${cmd}`));
+    try {
+      await execaCommand(cmd, { stdio: "pipe", shell: true });
+      console.log(chalk.green(`✔ Passed: ${cmd}`));
+    } catch (err: any) {
+      console.error(chalk.red(`✖ Failed: ${cmd}`));
+
+      const errorCard = ErrorSanitizer.sanitize(cmd, err.stderr || "", err.stdout || "");
+      console.log("\n" + ErrorSanitizer.formatErrorCard(errorCard) + "\n");
+
+      // Record failure with circuit breaker
       const { tripped, currentAttempts } = await CircuitBreaker.recordFailure(
         taskId,
-        cmdString,
-        sanitized.summary,
-        config.circuitBreakerLimit,
+        cmd,
+        errorCard.summary,
+        configLimit,
         manifest.allowedFiles
       );
 
       if (tripped) {
         console.error(
-          chalk.bgRed.bold(
-            `\n🚨 CIRCUIT BREAKER TRIPPED! (${currentAttempts}/${config.circuitBreakerLimit} failures)`
+          chalk.bold.red(
+            `\n🚨 CIRCUIT BREAKER TRIPPED (${currentAttempts}/${configLimit} failed attempts).`
           )
         );
         console.error(
           chalk.yellow(
-            "Working tree has been rolled back to preflight state. Check .harness/memory/spawn-log/.\n"
+            "Working tree rolled back to preflight state. Spawn receipt written to .harness/memory/spawn-log/.\n"
           )
         );
       } else {
-        console.error(
-          chalk.yellow(`Attempt ${currentAttempts}/${config.circuitBreakerLimit} failed. Fix errors and re-verify.\n`)
+        console.log(
+          chalk.yellow(`Attempt ${currentAttempts}/${configLimit}. Fix errors and re-verify.\n`)
         );
       }
       process.exit(1);
     }
   }
 
-  // 3. Reset Failures on Complete Success
+  // All passed: reset attempt counters
   await CircuitBreaker.resetAttempts(taskId);
-  console.log(chalk.bold.green("\n🎉 All verification commands passed exit 0!\n"));
+  console.log(chalk.bold.green(`\n✔ All verification commands passed (EXIT 0). Ready to close.\n`));
 }

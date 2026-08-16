@@ -21,27 +21,27 @@ program
 
 program
   .command("start <taskId>")
-  .description("Switch branch and mark task as IN_PROGRESS")
+  .description("Switch to isolated branch and mark task IN_PROGRESS")
   .action(runStart);
 
 program
   .command("preflight <taskId>")
-  .description("Run preflight sanity checks and generate agent echo contract")
+  .description("Run AST validation and generate agent echo contract")
   .action(runPreflight);
 
 program
   .command("verify <taskId>")
-  .description("Execute deterministic test/lint runner with error sanitization")
+  .description("Execute deterministic tests/linter with circuit breaker")
   .action(runVerify);
 
 program
   .command("checkpoint <taskId>")
-  .description("Auto-stash uncommitted diffs for Delta Protocol scope escalation")
+  .description("Stash uncommitted diffs for Delta Protocol scope triage")
   .action(runCheckpoint);
 
 program
   .command("close <taskId>")
-  .description("Validate boundaries, mark task as DONE, and write spawn log receipt")
+  .description("Validate boundaries, mark task DONE, and record spawn log")
   .action(runClose);
 
 program.parse(process.argv);

@@ -1,3 +1,18 @@
+# Build artifacts
 node_modules/
 packages/cli/node_modules/
 packages/cli/bin/
+dist/
+*.log
+.DS_Store
+
+# Memory runtime
+.harness/memory/*
+!.harness/memory/.gitignore
+!memory/attempts/.gitkeep
+
+# Ephemeral scratchpad
+temp/scripts/*
+temp/assets/*
+temp/artifacts/*
+!temp/*/.gitkeep
