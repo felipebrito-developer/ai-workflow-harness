@@ -1,3 +1,9 @@
+# coding docs
+docs/
+
+# Working AI docs
+.agents/
+
 # Build artifacts
 node_modules/
 packages/cli/node_modules/

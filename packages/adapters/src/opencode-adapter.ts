@@ -1,8 +1,8 @@
 import path from "node:path";
 import matter from "gray-matter";
-import type { CustomAgent } from "../schemas/agent.schema.js";
-import type { HarnessConfig } from "../schemas/harness-config.schema.js";
-import type { McpServer } from "../schemas/mcp.schema.js";
+import type { CustomAgent } from "../../cli/src/schemas/agent.schema.js";
+import type { HarnessConfig } from "../../cli/src/schemas/harness-config.schema.js";
+import type { McpServer } from "../../cli/src/schemas/mcp.schema.js";
 
 export interface SerializedFile {
   relativePath: string;

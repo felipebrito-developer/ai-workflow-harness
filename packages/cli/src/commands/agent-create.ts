@@ -4,7 +4,7 @@ import chalk from "chalk";
 import enquirer from "enquirer";
 import { type CustomAgent, CustomAgentSchema } from "../schemas/agent.schema.js";
 import type { HarnessConfig } from "../schemas/harness-config.schema.js";
-import { AdapterCompiler } from "../serializers/index.js";
+import { AdapterCompiler } from "@harness/adapters";
 
 interface AgentCreateAnswers {
     name: string;

@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import chalk from "chalk";
 import type { HarnessConfig } from "../schemas/harness-config.schema.js";
-import { AdapterCompiler } from "../serializers/index.js";
+import { AdapterCompiler } from "@harness/adapters";
 
 interface McpRow {
   name: string;

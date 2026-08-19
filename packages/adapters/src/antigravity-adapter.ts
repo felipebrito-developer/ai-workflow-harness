@@ -1,6 +1,6 @@
-import type { HarnessConfig } from "../schemas/harness-config.schema.js";
-import type { McpServer } from "../schemas/mcp.schema.js";
-import type { SerializedFile } from "./opencode-serializer.js";
+import type { HarnessConfig } from "../../cli/src/schemas/harness-config.schema.js";
+import type { McpServer } from "../../cli/src/schemas/mcp.schema.js";
+import type { SerializedFile } from "./opencode-adapter.js";
 
 export class AntigravitySerializer {
   public static serialize(config: HarnessConfig, mcpServers: McpServer[] = []): SerializedFile[] {

@@ -6,7 +6,7 @@ import {
   type HarnessConfig,
   HarnessConfigSchema,
 } from "../schemas/harness-config.schema.js";
-import { AdapterCompiler } from "../serializers/index.js";
+import { AdapterCompiler } from "@harness/adapters";
 
 export type StackOption =
   | "react-web"
@@ -17,6 +17,13 @@ export type StackOption =
   | "db-nosql"
   | "python";
 
+export type ModelPresetOption =
+  | "complex-best"
+  | "complex-efficient"
+  | "small-best"
+  | "small-efficient"
+  | "custom";
+
 export interface InitAnswers {
   projectName: string;
   enableTokenOptimizations: boolean;
@@ -25,8 +32,9 @@ export interface InitAnswers {
   installRecommendedSkills: boolean;
   adapters: ("opencode" | "antigravity")[];
   workflowMode: "orchestrated" | "solo-agent" | "vibe-assist";
-  providerType: "anthropic" | "openrouter" | "openai" | "custom";
-  providerModel: string;
+  providerType: "openrouter" | "anthropic" | "openai" | "custom";
+  modelPreset: ModelPresetOption;
+  customDefaultModel?: string;
   taskBackendType: "local" | "linear";
   cmdTest: string;
   cmdLint: string;
@@ -74,7 +82,7 @@ export async function runInit(): Promise<void> {
     {
       type: "confirm",
       name: "enableTokenOptimizations",
-      message: "Enable Token Usage Optimizations (Caveman mode & Context Caching)?",
+      message: "Enable Token Usage Optimizations (Caveman brevity & Context Caching)?",
       initial: true,
     },
     {
@@ -93,7 +101,7 @@ export async function runInit(): Promise<void> {
       initial: 0,
       validate(val: unknown) {
         if (!Array.isArray(val) || val.length === 0) {
-          return "Please select at least one stack / domain.";
+          return "Please select at least one domain.";
         }
         return true;
       },
@@ -107,7 +115,7 @@ export async function runInit(): Promise<void> {
     {
       type: "confirm",
       name: "installRecommendedSkills",
-      message: "Install curated skill catalogs for chosen agents?",
+      message: "Install curated skill catalogs for chosen agents (.harness/skills/)?",
       initial: true,
     },
     {
@@ -133,19 +141,50 @@ export async function runInit(): Promise<void> {
     {
       type: "select",
       name: "providerType",
-      message: "LLM Backend / Gateway:",
+      message: "LLM Gateway / Provider:",
       choices: [
-        { name: "anthropic", message: "Direct Anthropic (Claude 3.5 / 3.7)" },
-        { name: "openrouter", message: "OpenRouter (Multi-model Gateway)" },
-        { name: "openai", message: "OpenAI" },
+        { name: "openrouter", message: "OpenRouter (Recommended — Multi-model routing)" },
+        { name: "anthropic", message: "Direct Anthropic" },
+        { name: "openai", message: "Direct OpenAI" },
         { name: "custom", message: "Custom / Local Endpoint" },
       ],
     },
     {
+      type: "select",
+      name: "modelPreset",
+      message: "Select Model Strategy Preset:",
+      choices: [
+        {
+          name: "complex-best",
+          message: "Complex — Best Models (Sonnet 3.5 + DeepSeek R1 + GLM 5.2)",
+        },
+        {
+          name: "complex-efficient",
+          message: "Complex — Low Cost / Efficient (DeepSeek R1 + GLM 5.2 + Qwen 2.5 Coder)",
+        },
+        {
+          name: "small-best",
+          message: "Small — Best Models (Sonnet 3.5 + GLM 5.2)",
+        },
+        {
+          name: "small-efficient",
+          message: "Small — Low Cost / Efficient (GLM 5.2 + Qwen 2.5 Coder + Gemini Flash)",
+        },
+        {
+          name: "custom",
+          message: "Custom (Specify a single model ID for all agents)",
+        },
+      ],
+    },
+    {
       type: "input",
-      name: "providerModel",
-      message: "Model Identifier:",
+      name: "customDefaultModel",
+      message: "Enter Default Model ID:",
       initial: "anthropic/claude-3.5-sonnet",
+      skip() {
+        // @ts-ignore
+        return this.state.answers.modelPreset !== "custom";
+      },
     },
     {
       type: "select",
@@ -172,6 +211,72 @@ export async function runInit(): Promise<void> {
 
   const answers = await enquirer.prompt<InitAnswers>(questions);
 
+  // Granular Role-to-Model Mapping Engine
+  function getModelForRole(role: string): string {
+    if (answers.modelPreset === "custom") {
+      return answers.customDefaultModel || "anthropic/claude-3.5-sonnet";
+    }
+
+    if (answers.modelPreset === "complex-best") {
+      switch (role) {
+        case "architect-agent":
+        case "db-engineer":
+          return "deepseek/deepseek-r1";
+        case "po-agent":
+          return "z-ai/glm-5.2";
+        case "test-runner":
+          return "google/gemini-2.5-flash";
+        default:
+          return "anthropic/claude-3.5-sonnet";
+      }
+    }
+
+    if (answers.modelPreset === "complex-efficient") {
+      switch (role) {
+        case "architect-agent":
+        case "db-engineer":
+          return "deepseek/deepseek-r1";
+        case "workflow-orchestrator":
+        case "po-agent":
+        case "designer-lead":
+        case "designer-ui":
+        case "tech-lead":
+          return "z-ai/glm-5.2";
+        case "test-runner":
+          return "google/gemini-2.5-flash";
+        default:
+          return "qwen/qwen-2.5-coder-32b-instruct";
+      }
+    }
+
+    if (answers.modelPreset === "small-best") {
+      switch (role) {
+        case "po-agent":
+          return "z-ai/glm-5.2";
+        case "test-runner":
+          return "google/gemini-2.5-flash";
+        default:
+          return "anthropic/claude-3.5-sonnet";
+      }
+    }
+
+    // Default: "small-efficient"
+    switch (role) {
+      case "workflow-orchestrator":
+      case "architect-agent":
+      case "po-agent":
+      case "designer-lead":
+      case "designer-ui":
+        return "z-ai/glm-5.2";
+      case "test-runner":
+        return "google/gemini-2.5-flash";
+      default:
+        return "qwen/qwen-2.5-coder-32b-instruct";
+    }
+  }
+
+  const primaryModel = getModelForRole("workflow-orchestrator");
+
   const configPayload = {
     version: "1.0.0",
     projectName: answers.projectName,
@@ -180,7 +285,7 @@ export async function runInit(): Promise<void> {
     workflowMode: answers.workflowMode,
     provider: {
       type: answers.providerType,
-      model: answers.providerModel,
+      model: primaryModel,
       promptCaching: answers.enableTokenOptimizations,
     },
     taskBackend: {
@@ -195,13 +300,15 @@ export async function runInit(): Promise<void> {
 
   const validatedConfig: HarnessConfig = HarnessConfigSchema.parse(configPayload);
 
-  // 3. Scaffold Directory Structure
+  // 3. Directory Scaffolding
   const dirsToCreate = [
     path.join(harnessDir, "spec", "features"),
     path.join(harnessDir, "tasks"),
     path.join(harnessDir, "standards", "pipeline"),
     path.join(harnessDir, "agents"),
-    path.join(harnessDir, "skills"),
+    path.join(harnessDir, "skills", "core"),
+    path.join(harnessDir, "skills", "stack"),
+    path.join(harnessDir, "skills", "testing"),
     path.join(harnessDir, "mcp"),
     path.join(harnessDir, "UI", "details"),
     path.join(harnessDir, "temp", "scripts"),
@@ -221,7 +328,7 @@ export async function runInit(): Promise<void> {
     } catch {}
   }
 
-  // 4. Write Root .gitignore for Ephemeral Scratchpads
+  // 4. Write Root .gitignore
   await fs.writeFile(
     path.join(harnessDir, ".gitignore"),
     [
@@ -239,20 +346,15 @@ export async function runInit(): Promise<void> {
     "utf-8"
   );
 
-  // 5. Populate Agent Templates in .harness/agents/
+  // 5. Write Core Agents with Granular Model Allocation
   const agentsDir = path.join(harnessDir, "agents");
-  const commonProvider = {
-    type: answers.providerType,
-    model: answers.providerModel,
-    promptCaching: answers.enableTokenOptimizations,
-  };
 
   const coreAgents: Record<string, any> = {
     "workflow-orchestrator": {
       name: "workflow-orchestrator",
       description: "Primary pipeline supervisor managing Phase 1–5 transitions and handoffs.",
       mode: "primary",
-      provider: commonProvider,
+      provider: { type: answers.providerType, model: getModelForRole("workflow-orchestrator"), promptCaching: answers.enableTokenOptimizations },
       permissions: { edit: "allow", bash: "ask", task: { "*": "allow" }, externalDirectory: "deny" },
       systemPrompt: "You are the Workflow Orchestrator. Manage the 5-Phase Planning Lifecycle. Delegate Phase 1 & 4 to @architect-agent, Phase 2 & 5 to @po-agent, and Phase 3 to @designer-lead. Ensure all phase deliverables pass inspection before triggering technical execution.",
     },
@@ -260,7 +362,7 @@ export async function runInit(): Promise<void> {
       name: "architect-agent",
       description: "Owns Phase 1 Problem Discovery and Phase 4 Technical Architecture.",
       mode: "subagent",
-      provider: commonProvider,
+      provider: { type: answers.providerType, model: getModelForRole("architect-agent"), promptCaching: answers.enableTokenOptimizations },
       permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
       systemPrompt: "You are the Solution Architect. In Phase 1, conduct structured Q&A interviews using the 3+2 choice rule. In Phase 4, design data models, API contracts, and infrastructure ADRs in .harness/spec/features/<feature>/technical/spec.md. Never write feature source code directly.",
     },
@@ -268,7 +370,7 @@ export async function runInit(): Promise<void> {
       name: "po-agent",
       description: "Owns Phase 2 Functional Strategy and Phase 5 Task Slicing.",
       mode: "subagent",
-      provider: commonProvider,
+      provider: { type: answers.providerType, model: getModelForRole("po-agent"), promptCaching: answers.enableTokenOptimizations },
       permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
       systemPrompt: "You are the Product Owner. In Phase 2, define epics, personas, user journeys, and validate workflow topology. In Phase 5, slice technical specs into atomic task manifests in .harness/tasks/task-XXX.md with explicit acceptance criteria checkboxes and dependencies.",
     },
@@ -276,7 +378,7 @@ export async function runInit(): Promise<void> {
       name: "designer-lead",
       description: "Owns Phase 3 UI Architecture, component registry, and design consistency.",
       mode: "subagent",
-      provider: commonProvider,
+      provider: { type: answers.providerType, model: getModelForRole("designer-lead"), promptCaching: answers.enableTokenOptimizations },
       permissions: { edit: "allow", bash: "ask", task: { "*": "deny", "designer-ui": "allow" }, externalDirectory: "deny" },
       systemPrompt: "You are the Designer Lead. Define reusable UI components in .harness/UI/custom-components-registry.ts and author component specs in .harness/UI/details/<name>/component.md. Delegate ASCII and Mermaid wireframe creation to @designer-ui.",
     },
@@ -284,7 +386,7 @@ export async function runInit(): Promise<void> {
       name: "designer-ui",
       description: "Generates ASCII block wireframes and Mermaid route flowcharts.",
       mode: "subagent",
-      provider: commonProvider,
+      provider: { type: answers.providerType, model: getModelForRole("designer-ui"), promptCaching: answers.enableTokenOptimizations },
       permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
       systemPrompt: "You are the UI Wireframe Designer. Author ASCII block wireframes in wireframe-ascii.md and Mermaid state transition diagrams in route-flow-mermaid.md based on Designer-Lead component specifications.",
     },
@@ -292,7 +394,7 @@ export async function runInit(): Promise<void> {
       name: "tech-lead",
       description: "Execution manager. Decomposes tasks into subtasks, verifies ACs, and creates atomic git commits.",
       mode: "primary",
-      provider: commonProvider,
+      provider: { type: answers.providerType, model: getModelForRole("tech-lead"), promptCaching: answers.enableTokenOptimizations },
       permissions: { edit: "allow", bash: "allow", task: { "*": "allow" }, externalDirectory: "deny" },
       systemPrompt: "You are the Tech Lead. Receive tasks from .harness/tasks/task-XXX.md and break them into stack subtasks. Delegate implementation to <stack>-specialist and testing to @test-creator/@test-runner. Validate that all Acceptance Criteria are met. You are the sole agent authorized to commit changes upon successful verification.",
     },
@@ -300,7 +402,7 @@ export async function runInit(): Promise<void> {
       name: "test-creator",
       description: "Authors contract, unit, and integration tests matching Acceptance Criteria.",
       mode: "subagent",
-      provider: commonProvider,
+      provider: { type: answers.providerType, model: getModelForRole("test-creator"), promptCaching: answers.enableTokenOptimizations },
       permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
       systemPrompt: "You are the Test Creator. Generate failing unit and contract tests in __tests__/ matching the user story Acceptance Criteria before implementation begins. Do not implement feature logic.",
     },
@@ -308,13 +410,12 @@ export async function runInit(): Promise<void> {
       name: "test-runner",
       description: "Executes test and lint commands. Emits structured zero-noise failure reports.",
       mode: "subagent",
-      provider: commonProvider,
+      provider: { type: answers.providerType, model: getModelForRole("test-runner"), promptCaching: false },
       permissions: { edit: "deny", bash: "allow", task: { "*": "deny" }, externalDirectory: "deny" },
       systemPrompt: "You are the Test Runner. Execute verification commands via terminal. Never edit code or tests. Emit concise structured execution summaries containing only failing assertions, files, and line numbers.",
     },
   };
 
-  // Write core agents
   for (const [name, def] of Object.entries(coreAgents)) {
     await fs.writeFile(
       path.join(agentsDir, `${name}.json`),
@@ -323,14 +424,14 @@ export async function runInit(): Promise<void> {
     );
   }
 
-  // Write specialist templates if enabled
+  // Specialist Agents Scaffolding
   if (answers.createSpecialistTemplates) {
     const specialistMap: Record<StackOption, any> = {
       "react-web": {
         name: "web-specialist",
         description: "Specialist in React, Next.js/Vite, Tailwind, and Web state management.",
         mode: "subagent",
-        provider: commonProvider,
+        provider: { type: answers.providerType, model: getModelForRole("web-specialist"), promptCaching: answers.enableTokenOptimizations },
         permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
         systemPrompt: "You are the Web Specialist. Implement React and Web frontend components according to .harness/UI/ specs. Strictly respect file boundaries and ACs.",
       },
@@ -338,7 +439,7 @@ export async function runInit(): Promise<void> {
         name: "react-native-specialist",
         description: "Specialist in React Native, Expo Router, NativeWind, and gestures.",
         mode: "subagent",
-        provider: commonProvider,
+        provider: { type: answers.providerType, model: getModelForRole("react-native-specialist"), promptCaching: answers.enableTokenOptimizations },
         permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
         systemPrompt: "You are the React Native Specialist. Implement mobile components according to Expo standards and mobile specs. Strictly respect file boundaries.",
       },
@@ -346,7 +447,7 @@ export async function runInit(): Promise<void> {
         name: "node-specialist",
         description: "Specialist in Node.js, Fastify/Express, TypeScript, and clean architecture.",
         mode: "subagent",
-        provider: commonProvider,
+        provider: { type: answers.providerType, model: getModelForRole("node-specialist"), promptCaching: answers.enableTokenOptimizations },
         permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
         systemPrompt: "You are the Node.js Specialist. Implement backend endpoints, services, and domain models following strict typing and schema contracts.",
       },
@@ -354,7 +455,7 @@ export async function runInit(): Promise<void> {
         name: "go-specialist",
         description: "Specialist in idiomatic Go, Chi/Gin routers, and high-performance services.",
         mode: "subagent",
-        provider: commonProvider,
+        provider: { type: answers.providerType, model: getModelForRole("go-specialist"), promptCaching: answers.enableTokenOptimizations },
         permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
         systemPrompt: "You are the Go Specialist. Implement idiomatic Golang services and HTTP handlers adhering to technical contracts.",
       },
@@ -362,7 +463,7 @@ export async function runInit(): Promise<void> {
         name: "db-engineer",
         description: "Specialist in SQL schema design, migrations, indexing, and query optimization.",
         mode: "subagent",
-        provider: commonProvider,
+        provider: { type: answers.providerType, model: getModelForRole("db-engineer"), promptCaching: answers.enableTokenOptimizations },
         permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
         systemPrompt: "You are the Database Engineer. Author relational schema migrations, DDL scripts, and indexing strategies.",
       },
@@ -370,7 +471,7 @@ export async function runInit(): Promise<void> {
         name: "db-engineer",
         description: "Specialist in NoSQL data models, single-table design, and aggregation pipelines.",
         mode: "subagent",
-        provider: commonProvider,
+        provider: { type: answers.providerType, model: getModelForRole("db-engineer"), promptCaching: answers.enableTokenOptimizations },
         permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
         systemPrompt: "You are the Database Engineer. Author NoSQL access patterns, schemas, and cache strategies.",
       },
@@ -378,7 +479,7 @@ export async function runInit(): Promise<void> {
         name: "python-specialist",
         description: "Specialist in Python services, FastAPI, and data scripting.",
         mode: "subagent",
-        provider: commonProvider,
+        provider: { type: answers.providerType, model: getModelForRole("python-specialist"), promptCaching: answers.enableTokenOptimizations },
         permissions: { edit: "allow", bash: "ask", task: { "*": "deny" }, externalDirectory: "deny" },
         systemPrompt: "You are the Python Specialist. Implement typed Python services according to specifications.",
       },
@@ -396,7 +497,43 @@ export async function runInit(): Promise<void> {
     }
   }
 
-  // 6. Write Modular Pipeline Standards in .harness/standards/pipeline/
+  // 6. Write Curated Skills in .harness/skills/
+  if (answers.installRecommendedSkills) {
+    const skillsBase = path.join(harnessDir, "skills");
+
+    const coreSkills: Record<string, string> = {
+      "skill-caveman.md": "# Skill: Caveman Mode\n\n## Objective\nDrastically conserve context tokens by eliminating conversational pleasantries.\n\n## Rules\n- Output dense code diffs and bullet points only.\n- Skip greetings, confirmations, and polite transitions.\n- Maximize signal-to-noise ratio in every reply.\n",
+      "skill-context-caching.md": "# Skill: 2-Level Context Caching\n\n## Objective\nMinimize prompt cost across multi-turn agent sessions.\n\n## Rules\n1. Always load `.harness/spec/app-summary.md` as the root anchor.\n2. Load detailed feature sub-specs (`business/`, `ui/`, `technical/`) only when actively implementing that specific feature.\n3. Never load unneeded source files into the context window.\n",
+    };
+
+    const stackSkills: Record<string, string> = {
+      "skill-tailwind-shadcn.md": "# Skill: Tailwind & Component Architecture\n\n## Rules\n- Use utility-first Tailwind classes adhering to design system tokens.\n- Maintain accessibility attributes (`aria-*`, `role`, focus states).\n- Keep presentation logic separate from data hooks.\n",
+      "skill-tanstack-query.md": "# Skill: TanStack Query Best Practices\n\n## Rules\n- Declare standardized query keys using array tuples `['resource', id]`.\n- Implement optimistic updates for mutating actions with automatic rollback.\n- Centralize API fetchers in dedicated service modules.\n",
+      "skill-expo-router.md": "# Skill: Expo Router & React Native\n\n## Rules\n- Follow file-based routing conventions in `app/`.\n- Utilize `react-native-reanimated` for 60fps UI transitions.\n- Ensure safe area insets are respected across iOS and Android.\n",
+      "skill-typescript-strict.md": "# Skill: Strict TypeScript & Zod\n\n## Rules\n- Enforce `strict: true` with zero usage of `any` (use `unknown` + type guards).\n- Derive runtime types from Zod schemas using `z.infer<typeof Schema>`.\n- Use discriminated unions for distinct application states.\n",
+      "skill-idiomatic-go.md": "# Skill: Idiomatic Golang\n\n## Rules\n- Always accept `context.Context` as the first argument in I/O methods.\n- Explicitly wrap errors using `fmt.Errorf(\"action: %w\", err)`.\n- Use structured logging via standard library `log/slog`.\n",
+      "skill-sqlc.md": "# Skill: sqlc Type-Safe SQL\n\n## Rules\n- Author pure SQL queries with annotated query names `-- name: GetUser :one`.\n- Run `sqlc generate` to produce type-safe Go structs without ORM overhead.\n",
+      "skill-postgres-schema-design.md": "# Skill: PostgreSQL Schema & Migration Strategy\n\n## Rules\n- All foreign keys must include explicit index coverage.\n- Author migrations with deterministic down/rollback scripts.\n- Use `TIMESTAMPTZ` for all temporal columns.\n",
+      "skill-dynamodb-single-table.md": "# Skill: DynamoDB Single-Table Design\n\n## Rules\n- Model access patterns before defining Partition (`PK`) and Sort (`SK`) keys.\n- Use composite sort keys with delimiters (e.g., `USER#123#METADATA`).\n",
+    };
+
+    const testingSkills: Record<string, string> = {
+      "skill-tdd-assertions.md": "# Skill: Test-Driven Development (TDD)\n\n## Rules\n- Author failing tests first before modifying implementation code.\n- Ensure tests assert specific error messages, not just truthiness.\n",
+      "skill-zero-noise-reporter.md": "# Skill: Zero-Noise Test Diagnostic Reporting\n\n## Rules\n- Output concise failure cards containing only: Suite Name, Target File, Line Number, and Expected vs Actual values.\n- Do not output successful assertions or hundreds of irrelevant stack trace lines.\n",
+    };
+
+    for (const [file, content] of Object.entries(coreSkills)) {
+      await fs.writeFile(path.join(skillsBase, "core", file), content, "utf-8");
+    }
+    for (const [file, content] of Object.entries(stackSkills)) {
+      await fs.writeFile(path.join(skillsBase, "stack", file), content, "utf-8");
+    }
+    for (const [file, content] of Object.entries(testingSkills)) {
+      await fs.writeFile(path.join(skillsBase, "testing", file), content, "utf-8");
+    }
+  }
+
+  // 7. Write Modular Pipeline Standards in .harness/standards/pipeline/
   const pipelineDir = path.join(harnessDir, "standards", "pipeline");
   const pipelineFiles: Record<string, string> = {
     "phase-1-discovery.md": "# Phase 1: Problem Discovery & Baseline Audit\n\n## 1. Interactive Q&A Protocol\nUse Strict 3+2 rule: 3 recommended options, 4) Other, 5) Explain it better.\n\n## 2. Artifacts\nSave interview transcripts to `.harness/memory/discovery/<feature>.md`.\n",
@@ -410,7 +547,7 @@ export async function runInit(): Promise<void> {
     await fs.writeFile(path.join(pipelineDir, filename), content, "utf-8");
   }
 
-  // 7. Initialize UI Components Registry
+  // 8. Initialize UI Components Registry
   const registryPath = path.join(harnessDir, "UI", "custom-components-registry.ts");
   try {
     await fs.access(registryPath);
@@ -435,7 +572,7 @@ export async function runInit(): Promise<void> {
     );
   }
 
-  // 8. Write Master Spec Index (app-summary.md)
+  // 9. Write Master Spec Index (app-summary.md)
   const appSummaryPath = path.join(harnessDir, "spec", "app-summary.md");
   try {
     await fs.access(appSummaryPath);
@@ -464,21 +601,21 @@ export async function runInit(): Promise<void> {
     );
   }
 
-  // 9. Write harness.config.json
+  // 10. Write harness.config.json
   await fs.writeFile(
     path.join(harnessDir, "harness.config.json"),
     JSON.stringify(validatedConfig, null, 2),
     "utf-8"
   );
 
-  // 10. Transpile Adapters
+  // 11. Transpile Adapters
   const compiledFiles = await AdapterCompiler.compileAll(validatedConfig, cwd);
 
   console.log(chalk.green("\n✨ AI Harness initialized successfully!"));
-  console.log(chalk.dim(`- Directory: .harness/ (with agents/, standards/, temp/, UI/)`));
-  console.log(chalk.dim(`- Stack Agents: ${validatedConfig.stack.join(", ")}`));
+  console.log(chalk.dim(`- Directory: .harness/ (with agents/, skills/, UI/, temp/)`));
+  console.log(chalk.dim(`- Selected Strategy: ${answers.modelPreset}`));
   console.log(chalk.dim(`- Compiled Adapters: ${compiledFiles.join(", ")}`));
   console.log(
-    chalk.cyan("\nNext: Create a task in `.harness/tasks/task-001.md` and run `harness start task-001`.\n")
+    chalk.cyan("\nNext: Launch your AI tool or run `harness start <task-id>`.\n")
   );
 }

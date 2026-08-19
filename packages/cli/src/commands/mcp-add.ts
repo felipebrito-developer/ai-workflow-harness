@@ -4,7 +4,7 @@ import chalk from "chalk";
 import enquirer from "enquirer";
 import type { HarnessConfig } from "../schemas/harness-config.schema.js";
 import { type McpServer, McpServerSchema } from "../schemas/mcp.schema.js";
-import { AdapterCompiler } from "../serializers/index.js";
+import { AdapterCompiler } from "@harness/adapters";
 
 interface McpAddAnswers {
   preset: "filesystem" | "postgres" | "github" | "fetch" | "linear" | "custom_local" | "custom_remote";

@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { type CustomAgent, CustomAgentSchema } from "../schemas/agent.schema.js";
-import type { HarnessConfig } from "../schemas/harness-config.schema.js";
-import { type McpServer, McpServerSchema } from "../schemas/mcp.schema.js";
-import { AntigravitySerializer } from "./antigravity-serializer.js";
-import { OpenCodeSerializer, type SerializedFile } from "./opencode-serializer.js";
+import { type CustomAgent, CustomAgentSchema } from "../../cli/src/schemas/agent.schema.js";
+import type { HarnessConfig } from "../../cli/src/schemas/harness-config.schema.js";
+import { type McpServer, McpServerSchema } from "../../cli/src/schemas/mcp.schema.js";
+import { AntigravitySerializer } from "./antigravity-adapter.js";
+import { CursorSerializer } from "./cursor-adapter.js";
+import { OpenCodeSerializer, type SerializedFile } from "./opencode-adapter.js";
 
 export class AdapterCompiler {
   public static async loadCustomAgents(targetDirectory: string): Promise<CustomAgent[]> {
@@ -59,6 +60,10 @@ export class AdapterCompiler {
       filesToWrite.push(...AntigravitySerializer.serialize(config, mcpServers));
     }
 
+    if (config.adapters.includes("cursor")) {
+      filesToWrite.push(...CursorSerializer.serialize(config, mcpServers));
+    }
+
     const writtenFiles: string[] = [];
 
     for (const file of filesToWrite) {
@@ -72,5 +77,6 @@ export class AdapterCompiler {
   }
 }
 
-export * from "./opencode-serializer.js";
-export * from "./antigravity-serializer.js";
+export * from "./opencode-adapter.js";
+export * from "./antigravity-adapter.js";
+export * from "./cursor-adapter.js";
