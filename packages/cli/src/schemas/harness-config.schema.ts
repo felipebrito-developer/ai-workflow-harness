@@ -23,7 +23,7 @@ export const HarnessConfigSchema = z.object({
     }).optional(),
   }).optional(),
   circuitBreakerLimit: z.number().int().positive().max(5).default(3),
-  pipelineMode: z.enum(["full-waterfall", "agile-fasttrack", "hotfix"]).default("agile-fasttrack"),
+  pipelineMode: z.enum(["agile-fasttrack", "hotfix"]).default("agile-fasttrack"),
   vibeSettings: z.object({
     autoExpandBoundaries: z.boolean().default(true),
     retroIndexSpecs: z.boolean().default(true),

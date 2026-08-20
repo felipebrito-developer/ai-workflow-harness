@@ -25,7 +25,7 @@ When AI agents work on complex software projects without guardrails, they encoun
 3. **Waterfall Overhead:** Heavy multi-turn planning slows down feature velocity when simple agile iteration is needed.
 
 ### Core Goals & Solutions:
-- **2-Tier XP Planning Pipeline:** Choose between **Agile Fast-Track (2-Pass)** for rapid feature speed or **Full Waterfall (5-Pass)** for complex enterprise refactors.
+- **2-Tier XP Planning Pipeline:** Choose between **Agile Fast-Track (2-Pass)** for rapid feature speed or **Hotfix (1-Pass)** for emergency patches.
 - **SQLite WAL Spec Engine (`SpecDatabase`):** Persists features, topics, and tasks in a local SQLite database (`.harness/harness.db`) with automatic Markdown export.
 - **Micro-Task Boundary Enforcement:** Agents execute atomic tasks (`task-XXX.md`) constrained to $\le 2$ files. Unpermitted edits are blocked by pre-commit hooks and preflight checks.
 - **Automated Security Gates (`SecurityScanner`):** Detects credential leaks, prevents committed `.env` files, and audits package vulnerabilities (`bun audit`, `govulncheck`).

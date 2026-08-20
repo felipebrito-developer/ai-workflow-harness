@@ -1,32 +1,18 @@
 # Planning Engine & Agile Workflow
 
-The Harness framework supports both lightweight **2-Pass Agile Fast-Track** and comprehensive **5-Phase Waterfall** planning strategies.
+The Harness framework enforces rapid **2-Pass Agile Fast-Track** execution with zero waterfall overhead.
 
 ---
 
 ## 1. 2-Pass Agile Fast-Track (Default)
 
-Designed for rapid iteration and high velocity without waterfall overhead:
+Designed for rapid iteration, continuous delivery, and high velocity:
 
 1. **Pass 1: Vision & Scope (Product/UI):**
    - High-level epic goals, wireframe layout, and user journey definition.
    - Interactive 3-question baseline verification prompt during `harness analyze`.
 2. **Pass 2: Technical Execution & Micro-Tasks:**
    - Schema contracts and boundary-enforced task manifest generation (`task-XXX.md`).
-
----
-
-## 2. 5-Phase Waterfall Strategy
-
-Recommended for enterprise refactors or high-ambiguity greenfield projects:
-
-| Phase | Output Artifact | Scope & Purpose |
-| :--- | :--- | :--- |
-| **Phase 1: Discovery** | `.harness/memory/discovery/<feat>.md` | Interviews user, defines personas, audits existing codebase baseline. |
-| **Phase 2: Functional** | `spec/features/<feat>/business/spec.md` | User journeys, epics, milestones, AI workflow mode. |
-| **Phase 3: Visualization** | `spec/features/<feat>/ui/spec.md` | ASCII wireframes, UI state tables, Mermaid flowcharts. |
-| **Phase 4: Tech Specs** | `spec/features/<feat>/technical/spec.md` | Contracts, schemas, error modes, boundary constraints. |
-| **Phase 5: Task Slicing** | `.harness/tasks/task-XXX.md` | Atomic micro-manifest generation ($\le$ 2 files per task). |
 
 ---
 

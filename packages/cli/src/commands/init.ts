@@ -236,7 +236,6 @@ export async function runInit(): Promise<void> {
       message: "Select Default Planning Pipeline Strategy:",
       choices: [
         { name: "agile-fasttrack", message: "Agile Fast-Track (2-Pass: Scope/UI -> Tech/Tasks) [Recommended]" },
-        { name: "full-waterfall", message: "Full Waterfall (5-Pass: Discovery -> Scope -> UI -> Tech -> Tasks)" },
         { name: "hotfix", message: "Hotfix / Spike (1-Pass Direct Task Injection)" },
       ],
       initial: 0,
