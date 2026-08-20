@@ -16,6 +16,14 @@ export class AntigravitySerializer {
       };
     }
 
+    if (config.memoryBackend?.type === "ai-memory") {
+      mcpMap["ai-memory"] = {
+        command: "ai-memory",
+        args: ["mcp"],
+        env: {}
+      };
+    }
+
     for (const server of mcpServers) {
       if (server.type === "local" && server.command.length > 0) {
         const [bin, ...args] = server.command;
@@ -31,15 +39,20 @@ export class AntigravitySerializer {
       }
     }
 
+    const directives = [
+      "Enforce 5-phase planning pipeline before generating implementation code.",
+      "Read .harness/spec/app-summary.md for architectural context.",
+      "Adhere to task-XXX.md file boundary restrictions strictly.",
+      `Primary stack: ${Array.isArray(config.stack) ? config.stack.join(", ") : config.stack}`,
+    ];
+    if (config.memoryBackend?.type === "ai-memory") {
+      directives.push("Query ai-memory for cross-agent project context and wiki retrieval on task startup.");
+    }
+
     const payload = {
       version: "1.0.0",
       project: config.projectName,
-      directives: [
-        "Enforce 5-phase planning pipeline before generating implementation code.",
-        "Read .harness/spec/app-summary.md for architectural context.",
-        "Adhere to task-XXX.md file boundary restrictions strictly.",
-        `Primary stack: ${Array.isArray(config.stack) ? config.stack.join(", ") : config.stack}`,
-      ],
+      directives,
       mcpServers: mcpMap,
     };
 

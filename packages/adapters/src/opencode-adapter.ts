@@ -104,11 +104,12 @@ export class OpenCodeSerializer {
 
     // Providers mapping
     const providers: Record<string, unknown> = {};
-    if (
-      config.provider.baseUrl ||
-      config.provider.type === "openrouter" ||
-      config.provider.promptCaching
-    ) {
+    if (config.provider.type === "openrouter") {
+      providers.openrouter = {
+        baseURL: config.provider.baseUrl || "https://openrouter.ai/api/v1",
+        ...(config.provider.promptCaching ? { options: { promptCaching: true } } : {}),
+      };
+    } else if (config.provider.baseUrl || config.provider.promptCaching) {
       providers[config.provider.type] = {
         ...(config.provider.baseUrl ? { baseURL: config.provider.baseUrl } : {}),
         ...(config.provider.promptCaching ? { options: { promptCaching: true } } : {}),
@@ -138,6 +139,13 @@ export class OpenCodeSerializer {
         env: {
           LINEAR_API_KEY: "{env:LINEAR_API_KEY}",
         },
+      };
+    }
+
+    if (config.memoryBackend?.type === "ai-memory") {
+      mcpMap["ai-memory"] = {
+        type: "local",
+        command: ["ai-memory", "mcp"],
       };
     }
 

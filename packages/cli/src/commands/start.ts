@@ -34,5 +34,18 @@ export async function runStart(taskId: string): Promise<void> {
 
   console.log(chalk.green(`- Status: IN_PROGRESS`));
   console.log(chalk.dim(`- Allowed Boundaries: ${manifest.allowedFiles.join(", ")}`));
+
+  // 3. Memory Backend Integration
+  try {
+    const configPath = path.join(process.cwd(), ".harness", "harness.config.json");
+    const configRaw = await fs.readFile(configPath, "utf-8");
+    const config = JSON.parse(configRaw);
+    if (config.memoryBackend?.type === "ai-memory") {
+      console.log(chalk.cyan(`- ai-memory: Session tracking enabled for task ${manifest.frontmatter.id}`));
+    }
+  } catch (e) {
+    // Config not found or invalid, skip gracefully
+  }
+
   console.log(chalk.yellow(`\nRun 'harness preflight ${taskId}' before writing code.\n`));
 }

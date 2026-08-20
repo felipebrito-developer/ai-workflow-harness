@@ -15,7 +15,19 @@ export const HarnessConfigSchema = z.object({
   taskBackend: z.object({
     type: z.enum(["local", "linear"]).default("local"),
   }),
+  memoryBackend: z.object({
+    type: z.enum(["local-logs", "ai-memory"]).default("local-logs"),
+    aiMemoryConfig: z.object({
+      wikiPath: z.string().default(".harness/wiki"),
+      autoSync: z.boolean().default(true),
+    }).optional(),
+  }).optional(),
   circuitBreakerLimit: z.number().int().positive().max(5).default(3),
+  pipelineMode: z.enum(["full-waterfall", "agile-fasttrack", "hotfix"]).default("agile-fasttrack"),
+  vibeSettings: z.object({
+    autoExpandBoundaries: z.boolean().default(true),
+    retroIndexSpecs: z.boolean().default(true),
+  }).default({ autoExpandBoundaries: true, retroIndexSpecs: true }),
   commands: z.object({
     test: z.string().min(1),
     lint: z.string().min(1),

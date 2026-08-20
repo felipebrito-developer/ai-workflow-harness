@@ -2,6 +2,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { AstValidator } from "../engines/ast-validator.js";
 import { GitManager } from "../engines/git-manager.js";
+import { SecurityScanner } from "../engines/security-scanner.js";
 import { parseTaskManifest } from "../parsers/task-parser.js";
 
 export async function runPreflight(taskId: string): Promise<void> {
@@ -9,15 +10,21 @@ export async function runPreflight(taskId: string): Promise<void> {
   const manifest = await parseTaskManifest(taskFilePath);
   console.log(chalk.bold.cyan(`\n🔍 Running Preflight Gate for ${taskId}\n`));
 
-  // 1. Working Tree Inspection
+  // 1. Working Tree Inspection & Security Secret Gate
   const isClean = await GitManager.isWorkingTreeClean();
   const currentBranch = await GitManager.getCurrentBranch();
 
   console.log(`- Active Branch: ${chalk.bold(currentBranch)}`);
   if (!isClean) {
-    console.log(chalk.yellow("⚠️  Working tree has uncommitted modifications."));
+    console.log(chalk.yellow("⚠️  Working tree has uncommitted modifications. Scanning for secrets..."));
+    const diffText = await GitManager.getWorkingTreeDiff();
+    const securityIssues = await SecurityScanner.scanDiffSecrets(diffText);
+    if (securityIssues.length > 0) {
+      console.log("\n" + SecurityScanner.formatSecurityCard(securityIssues) + "\n");
+      process.exit(1);
+    }
   } else {
-    console.log(chalk.green("✔ Working tree clean."));
+    console.log(chalk.green("✔ Working tree clean and secret-free."));
   }
 
   // 2. Boundary AST Validation

@@ -3,6 +3,7 @@ import path from "node:path";
 import chalk from "chalk";
 import matter from "gray-matter";
 import { GitManager } from "../engines/git-manager.js";
+import { SpecDatabase } from "../engines/spec-database.js";
 import { parseTaskManifest } from "../parsers/task-parser.js";
 
 export async function runClose(taskId: string): Promise<void> {
@@ -39,5 +40,32 @@ export async function runClose(taskId: string): Promise<void> {
   ].join("\n");
 
   await fs.writeFile(path.join(spawnDir, `closed-${taskId}.md`), logContent, "utf-8");
+  
+  // 4. Spec Database Markdown Sync
+  try {
+    const harnessDir = path.join(process.cwd(), ".harness");
+    const specDb = new SpecDatabase(harnessDir);
+    await specDb.exportToMarkdown(harnessDir);
+    specDb.close();
+    console.log(chalk.dim(`- Spec Database: Auto-exported to .harness/spec/`));
+  } catch (e) {
+    // Graceful fallback if db doesn't exist
+  }
+
+  // 5. Memory Backend Integration
+  try {
+    const configPath = path.join(process.cwd(), ".harness", "harness.config.json");
+    const configRaw = await fs.readFile(configPath, "utf-8");
+    const config = JSON.parse(configRaw);
+    if (config.memoryBackend?.type === "ai-memory") {
+      const wikiDir = path.join(process.cwd(), config.memoryBackend.aiMemoryConfig?.wikiPath || ".harness/wiki");
+      await fs.mkdir(wikiDir, { recursive: true });
+      await fs.appendFile(path.join(wikiDir, "spawn-log.md"), `\n${logContent}\n`, "utf-8");
+      console.log(chalk.cyan(`- ai-memory: Spawn log appended to wiki`));
+    }
+  } catch (e) {
+    // Graceful fallback
+  }
+
   console.log(chalk.bold.green(`\n✔ Task ${taskId} successfully closed and logged in spawn-log!\n`));
 }

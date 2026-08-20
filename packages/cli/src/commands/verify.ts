@@ -14,27 +14,34 @@ export async function runVerify(taskId: string): Promise<void> {
 
   console.log(chalk.bold.cyan(`\n🧪 Verifying Task: ${manifest.frontmatter.id}\n`));
 
-  // 1. File Boundary Gate Check
-  const boundaryCheck = await GitManager.validateFileBoundaries(manifest.allowedFiles);
-  if (!boundaryCheck.valid) {
-    console.error(chalk.red("✖ File Boundary Violation Detected!"));
-    console.error(
-      chalk.red(`  Modified out-of-scope files:\n  ${boundaryCheck.violatingFiles.join("\n  ")}`)
-    );
-    process.exit(1);
-  }
-  console.log(chalk.green("✔ File boundaries respected."));
-
-  // 2. Load Config for Circuit Breaker limit
-  let configLimit = 3;
+  // 2. Load Config
+  let cfg: HarnessConfig | null = null;
   try {
     const rawConfig = await fs.readFile(
       path.join(process.cwd(), ".harness", "harness.config.json"),
       "utf-8"
     );
-    const cfg: HarnessConfig = JSON.parse(rawConfig);
-    configLimit = cfg.circuitBreakerLimit || 3;
+    cfg = JSON.parse(rawConfig);
   } catch {}
+  const configLimit = cfg?.circuitBreakerLimit || 3;
+  const isVibeMode = cfg?.workflowMode === "vibe-assist" || cfg?.vibeSettings?.autoExpandBoundaries;
+
+  // 1. File Boundary Gate Check
+  const boundaryCheck = await GitManager.validateFileBoundaries(manifest.allowedFiles);
+  if (!boundaryCheck.valid) {
+    if (isVibeMode) {
+      console.log(chalk.yellow("⚡ Vibe Mode: Auto-expanding task boundaries for newly touched files:"));
+      console.log(chalk.dim(`  + ${boundaryCheck.violatingFiles.join("\n  + ")}`));
+      manifest.allowedFiles.push(...boundaryCheck.violatingFiles);
+    } else {
+      console.error(chalk.red("✖ File Boundary Violation Detected!"));
+      console.error(
+        chalk.red(`  Modified out-of-scope files:\n  ${boundaryCheck.violatingFiles.join("\n  ")}`)
+      );
+      process.exit(1);
+    }
+  }
+  console.log(chalk.green("✔ File boundaries verified."));
 
   // 3. Execute Verification Commands
   for (const cmd of manifest.verificationCommands) {

@@ -32,6 +32,16 @@ export class GitManager {
     return stdout.trim().length === 0;
   }
 
+  public static async getWorkingTreeDiff(): Promise<string> {
+    try {
+      const { stdout: diff } = await execa("git", ["diff", "HEAD"]);
+      return diff;
+    } catch {
+      const { stdout: diff } = await execa("git", ["diff"]);
+      return diff;
+    }
+  }
+
   public static async ensureTaskBranch(taskId: string, titleSlug: string): Promise<string> {
     const targetBranch = `task/${taskId.toLowerCase()}-${titleSlug.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     const currentBranch = await this.getCurrentBranch();

@@ -7,6 +7,8 @@ import {
   HarnessConfigSchema,
 } from "../schemas/harness-config.schema.js";
 import { AdapterCompiler } from "@harness/adapters";
+import { RepoAnalyzer } from "../engines/repo-analyzer.js";
+import { SpecDatabase } from "../engines/spec-database.js";
 
 export type StackOption =
   | "react-web"
@@ -36,6 +38,8 @@ export interface InitAnswers {
   modelPreset: ModelPresetOption;
   customDefaultModel?: string;
   taskBackendType: "local" | "linear";
+  useAiMemory: boolean;
+  pipelineMode: "agile-fasttrack" | "full-waterfall" | "hotfix";
   cmdTest: string;
   cmdLint: string;
 }
@@ -46,7 +50,32 @@ export async function runInit(): Promise<void> {
   const cwd = process.cwd();
   const harnessDir = path.join(cwd, ".harness");
 
-  // 1. Conflict Audit
+  // 1. Brownfield Auto-Discovery Check
+  let brownfieldResult: any = null;
+  let isBrownfield = false;
+  try {
+    await fs.access(path.join(cwd, "package.json"));
+    isBrownfield = true;
+  } catch {
+    try {
+      await fs.access(path.join(cwd, "go.mod"));
+      isBrownfield = true;
+    } catch {}
+  }
+
+  if (isBrownfield) {
+    const { runAutoScan } = await enquirer.prompt<{ runAutoScan: boolean }>({
+      type: "confirm",
+      name: "runAutoScan",
+      message: "Existing codebase detected. Run Brownfield Auto-Discovery (harness analyze)?",
+      initial: true,
+    });
+    if (runAutoScan) {
+      brownfieldResult = await RepoAnalyzer.analyze(cwd);
+    }
+  }
+
+  // 2. Conflict Audit
   const conflicts: string[] = [];
   for (const file of ["opencode.json", "antigravity.json", ".cursorrules"]) {
     try {
@@ -196,6 +225,23 @@ export async function runInit(): Promise<void> {
       ],
     },
     {
+      type: "confirm",
+      name: "useAiMemory",
+      message: "Enable long-term cross-agent memory backend (ai-memory)?",
+      initial: false,
+    },
+    {
+      type: "select",
+      name: "pipelineMode",
+      message: "Select Default Planning Pipeline Strategy:",
+      choices: [
+        { name: "agile-fasttrack", message: "Agile Fast-Track (2-Pass: Scope/UI -> Tech/Tasks) [Recommended]" },
+        { name: "full-waterfall", message: "Full Waterfall (5-Pass: Discovery -> Scope -> UI -> Tech -> Tasks)" },
+        { name: "hotfix", message: "Hotfix / Spike (1-Pass Direct Task Injection)" },
+      ],
+      initial: 0,
+    },
+    {
       type: "input",
       name: "cmdTest",
       message: "Test Command:",
@@ -213,66 +259,76 @@ export async function runInit(): Promise<void> {
 
   // Granular Role-to-Model Mapping Engine
   function getModelForRole(role: string): string {
+    let rawModel = "anthropic/claude-3.5-sonnet";
+
     if (answers.modelPreset === "custom") {
-      return answers.customDefaultModel || "anthropic/claude-3.5-sonnet";
-    }
-
-    if (answers.modelPreset === "complex-best") {
+      rawModel = answers.customDefaultModel || "anthropic/claude-3.5-sonnet";
+    } else if (answers.modelPreset === "complex-best") {
       switch (role) {
         case "architect-agent":
         case "db-engineer":
-          return "deepseek/deepseek-r1";
+          rawModel = "deepseek/deepseek-r1";
+          break;
         case "po-agent":
-          return "z-ai/glm-5.2";
+          rawModel = "z-ai/glm-5.2";
+          break;
         case "test-runner":
-          return "google/gemini-2.5-flash";
+          rawModel = "google/gemini-2.5-flash";
+          break;
         default:
-          return "anthropic/claude-3.5-sonnet";
+          rawModel = "anthropic/claude-3.5-sonnet";
       }
-    }
-
-    if (answers.modelPreset === "complex-efficient") {
+    } else if (answers.modelPreset === "complex-efficient") {
       switch (role) {
         case "architect-agent":
         case "db-engineer":
-          return "deepseek/deepseek-r1";
+          rawModel = "deepseek/deepseek-r1";
+          break;
         case "workflow-orchestrator":
         case "po-agent":
         case "designer-lead":
         case "designer-ui":
         case "tech-lead":
-          return "z-ai/glm-5.2";
+          rawModel = "z-ai/glm-5.2";
+          break;
         case "test-runner":
-          return "google/gemini-2.5-flash";
+          rawModel = "google/gemini-2.5-flash";
+          break;
         default:
-          return "qwen/qwen-2.5-coder-32b-instruct";
+          rawModel = "qwen/qwen-2.5-coder-32b-instruct";
       }
-    }
-
-    if (answers.modelPreset === "small-best") {
+    } else if (answers.modelPreset === "small-best") {
       switch (role) {
         case "po-agent":
-          return "z-ai/glm-5.2";
+          rawModel = "z-ai/glm-5.2";
+          break;
         case "test-runner":
-          return "google/gemini-2.5-flash";
+          rawModel = "google/gemini-2.5-flash";
+          break;
         default:
-          return "anthropic/claude-3.5-sonnet";
+          rawModel = "anthropic/claude-3.5-sonnet";
+      }
+    } else {
+      switch (role) {
+        case "workflow-orchestrator":
+        case "architect-agent":
+        case "po-agent":
+        case "designer-lead":
+        case "designer-ui":
+          rawModel = "z-ai/glm-5.2";
+          break;
+        case "test-runner":
+          rawModel = "google/gemini-2.5-flash";
+          break;
+        default:
+          rawModel = "qwen/qwen-2.5-coder-32b-instruct";
       }
     }
 
-    // Default: "small-efficient"
-    switch (role) {
-      case "workflow-orchestrator":
-      case "architect-agent":
-      case "po-agent":
-      case "designer-lead":
-      case "designer-ui":
-        return "z-ai/glm-5.2";
-      case "test-runner":
-        return "google/gemini-2.5-flash";
-      default:
-        return "qwen/qwen-2.5-coder-32b-instruct";
+    if (answers.providerType === "openrouter" && !rawModel.startsWith("openrouter/")) {
+      return `openrouter/${rawModel}`;
     }
+    return rawModel;
   }
 
   const primaryModel = getModelForRole("workflow-orchestrator");
@@ -291,6 +347,8 @@ export async function runInit(): Promise<void> {
     taskBackend: {
       type: answers.taskBackendType,
     },
+    ...(answers.useAiMemory ? { memoryBackend: { type: "ai-memory" } } : {}),
+    pipelineMode: answers.pipelineMode,
     circuitBreakerLimit: 3,
     commands: {
       test: answers.cmdTest,
@@ -320,6 +378,10 @@ export async function runInit(): Promise<void> {
     path.join(harnessDir, "memory", "attempts"),
   ];
 
+  if (answers.useAiMemory) {
+    dirsToCreate.push(path.join(harnessDir, "wiki"));
+  }
+
   for (const dir of dirsToCreate) {
     await fs.mkdir(dir, { recursive: true });
     const gitkeep = path.join(dir, ".gitkeep");
@@ -341,6 +403,11 @@ export async function runInit(): Promise<void> {
       "# Ephemeral runtime memory",
       "memory/attempts/*",
       "!memory/attempts/.gitkeep",
+      "",
+      "# SQLite Local Database (WAL mode)",
+      "harness.db",
+      "harness.db-wal",
+      "harness.db-shm",
       "",
     ].join("\n"),
     "utf-8"
@@ -502,6 +569,7 @@ export async function runInit(): Promise<void> {
     const skillsBase = path.join(harnessDir, "skills");
 
     const coreSkills: Record<string, string> = {
+      "skill-harness.md": "# Skill: AI Workflow Harness Framework\n\n## Objective\nOperate the 2-tier XP workflow, SQLite spec engine, and security gates.\n\n## Core Rules\n- Tier 1: `harness init` / `harness analyze` for app vision & zero-prompt brownfield auto-discovery.\n- Tier 2: `harness feature <name>` for 1-pass Agile feature generation & risk evaluation.\n- Pre-Commit Security: `harness audit` & `harness preflight` block uncommitted credentials or `.env` files.\n- File Boundaries: Restrict changes to `allowedFiles` (<=2 files per task). Require test exit code 0 on `harness verify`.\n",
       "skill-caveman.md": "# Skill: Caveman Mode\n\n## Objective\nDrastically conserve context tokens by eliminating conversational pleasantries.\n\n## Rules\n- Output dense code diffs and bullet points only.\n- Skip greetings, confirmations, and polite transitions.\n- Maximize signal-to-noise ratio in every reply.\n",
       "skill-context-caching.md": "# Skill: 2-Level Context Caching\n\n## Objective\nMinimize prompt cost across multi-turn agent sessions.\n\n## Rules\n1. Always load `.harness/spec/app-summary.md` as the root anchor.\n2. Load detailed feature sub-specs (`business/`, `ui/`, `technical/`) only when actively implementing that specific feature.\n3. Never load unneeded source files into the context window.\n",
     };
@@ -608,7 +676,19 @@ export async function runInit(): Promise<void> {
     "utf-8"
   );
 
-  // 11. Transpile Adapters
+  // 11. Initialize SQLite Spec Database (.harness/harness.db)
+  const specDb = new SpecDatabase(harnessDir);
+  specDb.upsertFeature({
+    id: "feat-core",
+    name: validatedConfig.projectName,
+    slug: "core-architecture",
+    summary: `Core architectural foundation for ${validatedConfig.projectName}`,
+    status: "STABLE",
+  });
+  await specDb.exportToMarkdown(harnessDir);
+  specDb.close();
+
+  // 12. Transpile Adapters
   const compiledFiles = await AdapterCompiler.compileAll(validatedConfig, cwd);
 
   console.log(chalk.green("\n✨ AI Harness initialized successfully!"));
