@@ -23,9 +23,14 @@ export class AntigravitySerializer {
 		}
 
 		if (config.memoryBackend?.type === "ai-memory") {
+			const cmdParts =
+				config.memoryBackend.command && config.memoryBackend.command.length > 0
+					? config.memoryBackend.command
+					: ["npx", "-y", "ai-memory", "mcp"];
+			const [bin, ...args] = cmdParts;
 			mcpMap["ai-memory"] = {
-				command: "ai-memory",
-				args: ["mcp"],
+				command: bin,
+				args: args,
 				env: {},
 			};
 		}

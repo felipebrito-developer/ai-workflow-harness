@@ -160,9 +160,13 @@ export class OpenCodeSerializer {
 		}
 
 		if (config.memoryBackend?.type === "ai-memory") {
+			const cmdParts =
+				config.memoryBackend.command && config.memoryBackend.command.length > 0
+					? config.memoryBackend.command
+					: ["npx", "-y", "ai-memory", "mcp"];
 			mcpMap["ai-memory"] = {
 				type: "local",
-				command: ["ai-memory", "mcp"],
+				command: cmdParts,
 			};
 		}
 

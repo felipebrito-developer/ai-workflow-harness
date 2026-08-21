@@ -5,14 +5,3 @@ packages/cli/bin/
 dist/
 *.log
 .DS_Store
-
-# Memory runtime
-.harness/memory/*
-!.harness/memory/.gitignore
-!.harness/memory/attempts/.gitkeep
-
-# Ephemeral scratchpad
-.harness/temp/scripts/*
-.harness/temp/assets/*
-.harness/temp/artifacts/*
-!.harness/temp/*/.gitkeep
