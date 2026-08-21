@@ -374,7 +374,7 @@ export async function runInit(): Promise<void> {
 				{
 					name: "ai-memory",
 					type: "local",
-					command: ["npx", "-y", "ai-memory", "mcp"],
+					command: ["ai-memory", "mcp"],
 					env: {},
 				},
 				null,

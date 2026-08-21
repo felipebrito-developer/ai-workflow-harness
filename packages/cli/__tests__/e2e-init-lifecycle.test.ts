@@ -507,12 +507,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 
 			// ai-memory MCP
 			expect(json.mcp).toHaveProperty("ai-memory");
-			expect(json.mcp["ai-memory"].command).toEqual([
-				"npx",
-				"-y",
-				"ai-memory",
-				"mcp",
-			]);
+			expect(json.mcp["ai-memory"].command).toEqual(["ai-memory", "mcp"]);
 		});
 
 		it("should generate opencode.md with project info and commands", async () => {
@@ -559,12 +554,8 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 
 			// ai-memory MCP
 			expect(json.mcpServers).toHaveProperty("ai-memory");
-			expect(json.mcpServers["ai-memory"].command).toBe("npx");
-			expect(json.mcpServers["ai-memory"].args).toEqual([
-				"-y",
-				"ai-memory",
-				"mcp",
-			]);
+			expect(json.mcpServers["ai-memory"].command).toBe("ai-memory");
+			expect(json.mcpServers["ai-memory"].args).toEqual(["mcp"]);
 
 			// ai-memory directive
 			const hasMemoryDirective = json.directives.some((d: string) =>

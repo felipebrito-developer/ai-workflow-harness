@@ -153,7 +153,7 @@ export class OpenCodeSerializer {
 			const cmdParts =
 				config.memoryBackend.command && config.memoryBackend.command.length > 0
 					? config.memoryBackend.command
-					: ["npx", "-y", "ai-memory", "mcp"];
+					: ["ai-memory", "mcp"];
 			mcpMap["ai-memory"] = {
 				type: "local",
 				command: cmdParts,
