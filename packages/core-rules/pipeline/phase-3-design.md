@@ -1,14 +1,16 @@
 # Phase 3: Visualization & Design Architecture
 
-## 1. File Structure Contract
-[cite_start]UI specifications must be divided into registry and component details:
+## 1. File Structure & Component Registry Contract
+UI specifications and component layouts are registered in:
 
 .harness/UI/
-[cite_start]├── custom-components-registry.ts        # Index of all reusable components [cite: 1901, 3014]
+├── custom-components-registry.ts        # Index of all reusable components
 └── details/<component-name>/
-    [cite_start]├── component.md                     # Behaviors, states, props, and subcomponents [cite: 1904, 3014]
-    ├── wireframe-ascii.md               # ASCII Block Layout per state [cite: 1905, 3014]
-    └── route-flow-mermaid.md            # Mermaid Screen Navigation & Route Flowchart [cite: 1905, 3014]
+    ├── component.md                     # Behaviors, states, props, and subcomponents
+    ├── wireframe-ascii.md               # ASCII Block Layout per state
+    └── route-flow-mermaid.md            # Mermaid Screen Navigation & Route Flowchart
 
-## 2. Feature UI Spec Contract
-[cite_start]Feature-specific UI specs reside at `.harness/spec/features/<feature>/ui/spec.md` [cite: 1905, 3014, 3760] [cite_start]referencing the components defined in `.harness/UI/`[cite: 1901, 1904].
+## 2. DB-First Feature UI Spec Contract (ADR-01)
+- **Primary Spec Store:** Store feature UI specs in SQLite `.harness/harness.db` (`spec_topics` with category=`ui`, `spec_chunks` with level=`detail`).
+- **Context Lookup:** Retrieve UI specs via `spec-query` MCP tool (`get_spec("<feature>", "ui")`) referencing components defined in `.harness/UI/`.
+- **Git Versioning:** `.harness/harness.db` is un-gitignored (`!harness.db`) and committed as the versioned source of truth.[cite: 1901, 1904].
