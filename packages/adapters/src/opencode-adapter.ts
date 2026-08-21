@@ -93,7 +93,8 @@ export class OpenCodeSerializer {
 			model: modelIdentifier,
 			instructions: [
 				".harness/spec/app-summary.md",
-				".harness/standards/**/summary.md",
+				".harness/standards/**/*.md",
+				".harness/skills/**/*.md",
 				"opencode.md",
 			],
 			agent: {

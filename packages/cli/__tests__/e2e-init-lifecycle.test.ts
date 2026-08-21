@@ -495,6 +495,8 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			expect(json.model).toContain("openrouter/");
 			expect(Array.isArray(json.instructions)).toBe(true);
 			expect(json.instructions).toContain(".harness/spec/app-summary.md");
+			expect(json.instructions).toContain(".harness/standards/**/*.md");
+			expect(json.instructions).toContain(".harness/skills/**/*.md");
 			expect(json.agent).toHaveProperty("architect");
 			expect(json.agent.architect.mode).toBe("primary");
 

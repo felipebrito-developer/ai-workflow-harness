@@ -537,13 +537,88 @@ export async function runInit(): Promise<void> {
 	const specDb = new SpecDatabase(harnessDir);
 	specDb.upsertFeature({
 		id: "feat-core",
-		name: validatedConfig.projectName,
+		name: `${validatedConfig.projectName} Core`,
 		slug: "core-architecture",
-		summary: `Core architectural foundation for ${validatedConfig.projectName}`,
+		summary: `Core architectural foundation and shared utilities for ${validatedConfig.projectName}`,
 		status: "STABLE",
 	});
+
+	if (brownfieldResult?.detectedModules && brownfieldResult.detectedModules.length > 0) {
+		for (const modName of brownfieldResult.detectedModules) {
+			const modSlug = modName.toLowerCase().replace(/[^a-z0-9]/g, "-");
+			specDb.upsertFeature({
+				id: `feat-${modSlug}`,
+				name: `${modName.charAt(0).toUpperCase() + modName.slice(1)} Module`,
+				slug: modSlug,
+				summary: `Auto-discovered brownfield module '${modName}' requiring architectural review and test coverage.`,
+				status: "DRAFT",
+			});
+		}
+	}
 	await specDb.exportToMarkdown(harnessDir);
 	specDb.close();
+
+	// 11b. Seed Baseline Memory & Wiki Overview
+	if (isBrownfield) {
+		const baselineMapPath = path.join(
+			harnessDir,
+			"memory",
+			"discovery",
+			"brownfield-baseline-map.md",
+		);
+		await fs.writeFile(
+			baselineMapPath,
+			[
+				`# Discovery Map: ${validatedConfig.projectName} (Brownfield Baseline)`,
+				"",
+				`> **Auto-Discovered Stack:** ${validatedConfig.stack.join(", ")}`,
+				`> **Test Command:** \`${validatedConfig.commands.test}\``,
+				`> **Lint Command:** \`${validatedConfig.commands.lint}\``,
+				"",
+				"## Destination",
+				`Establish full 5-phase harness discipline and test coverage for existing codebase ${validatedConfig.projectName}.`,
+				"",
+				"## Discovered Core Modules",
+				...(brownfieldResult?.detectedModules?.map((m: string) => `- \`${m}\``) || ["- `src/`"]),
+				"",
+				"## Decisions So Far",
+				`- Primary Stack: ${validatedConfig.stack.join(", ")}`,
+				`- Task Execution Backend: ${validatedConfig.taskBackend.type}`,
+				`- Memory Backend: ${validatedConfig.memoryBackend?.type || "local-logs"}`,
+				"",
+				"## Fog of War (Pending Phase 1 Discovery)",
+				"- Audit legacy module boundaries and un-tested codepaths.",
+				"- Define TypeScript/Zod schemas for API payload contracts.",
+				"- Establish atomic feature slicing for new additions.",
+				"",
+				"## Out of Scope",
+				"- Modifying operational deployment scripts without preflight approval.",
+				"",
+			].join("\n"),
+			"utf-8",
+		);
+	}
+
+	if (answers.useAiMemory) {
+		await fs.writeFile(
+			path.join(harnessDir, "wiki", "overview.md"),
+			[
+				`# ${validatedConfig.projectName} — AI Memory Wiki Overview`,
+				"",
+				`> Shared long-term cross-agent memory for ${validatedConfig.projectName}`,
+				"",
+				"## Architecture Rules",
+				`- **Stack:** ${validatedConfig.stack.join(", ")}`,
+				`- **Pipeline Mode:** ${validatedConfig.pipelineMode}`,
+				`- **Circuit Breaker Limit:** ${validatedConfig.circuitBreakerLimit} retries`,
+				"",
+				"## Session Logs & Handoffs",
+				"Lifecycle observations, decisions, and cross-agent handoffs are logged here.",
+				"",
+			].join("\n"),
+			"utf-8",
+		);
+	}
 
 	// 12. Transpile Adapters
 	const compiledFiles = await AdapterCompiler.compileAll(validatedConfig, cwd);

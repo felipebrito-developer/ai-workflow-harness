@@ -183,6 +183,22 @@ export class SpecDatabase {
 			const featDir = path.join(specDir, "features", feat.slug);
 			await fs.mkdir(featDir, { recursive: true });
 
+			const featReadme = [
+				`# Feature: ${feat.name}`,
+				"",
+				`> **Status:** ${feat.status}`,
+				`> **Slug:** \`${feat.slug}\``,
+				"",
+				"## Overview",
+				feat.summary,
+				"",
+				"## Sub-specs Structure",
+				"- \`business/spec.md\` — Business requirements and user journeys",
+				"- \`ui/spec.md\` — Component specifications and wireframes",
+				"- \`technical/spec.md\` — API contracts, database schemas, and type definitions",
+			].join("\n");
+			await fs.writeFile(path.join(featDir, "README.md"), featReadme, "utf-8");
+
 			const chunks = this.db
 				.prepare(`
         SELECT t.category, t.title, c.level, c.content 

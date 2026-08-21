@@ -1,61 +1,305 @@
 export class TemplateScaffolder {
 	public static getCoreSkills(): Record<string, string> {
 		return {
-			"skill-harness.md":
-				"# Skill: AI Workflow Harness Framework\n\n## Objective\nOperate the 2-tier XP workflow, SQLite spec engine, and security gates.\n\n## Core Rules\n- Tier 1: `harness init` / `harness analyze` for app vision & zero-prompt brownfield auto-discovery.\n- Tier 2: `harness feature <name>` for 1-pass Agile feature generation & risk evaluation.\n- Pre-Commit Security: `harness audit` & `harness preflight` block uncommitted credentials or `.env` files.\n- File Boundaries: Restrict changes to `allowedFiles` (<=2 files per task). Require test exit code 0 on `harness verify`.\n",
-			"skill-caveman.md":
-				"# Skill: Caveman Mode\n\n## Objective\nDrastically conserve context tokens by eliminating conversational pleasantries.\n\n## Rules\n- Output dense code diffs and bullet points only.\n- Skip greetings, confirmations, and polite transitions.\n- Maximize signal-to-noise ratio in every reply.\n",
-			"skill-context-caching.md":
-				"# Skill: 2-Level Context Caching\n\n## Objective\nMinimize prompt cost across multi-turn agent sessions.\n\n## Rules\n1. Always load `.harness/spec/app-summary.md` as the root anchor.\n2. Load detailed feature sub-specs (`business/`, `ui/`, `technical/`) only when actively implementing that specific feature.\n3. Never load unneeded source files into the context window.\n",
-			"skill-wayfinder-harness.md":
-				"# Skill: Wayfinder Planning (Harness-Adapted)\n\n## Objective\nChart large planning efforts by creating discovery Maps at `.harness/memory/discovery/<feature>-map.md`, then resolving decision tickets one at a time until the way is clear.\n\n## Core Rules\n- Plan, don't code: Produce decisions and specifications, not implementation code.\n- Wayfinder Grilling (3+2 Choice Rule): @architect-agent MUST ask structured questions presenting 3 recommended options, Option 4 (Other write-in), and Option 5 (Explain / Need context).\n- Discovery Map Structure:\n  - Destination: High-level goal and success criteria.\n  - Notes: Key context, user constraints, stack preferences.\n  - Decisions So Far: Confirmed technical and business choices.\n  - Fog of War: Undecided requirements (ticketed for resolution before slicing).\n  - Out of Scope: Explicitly excluded features/technologies.\n- Ticket Types:\n  - `research`: Broad codebase or market analysis (unbounded).\n  - `grilling`: Interactive user Q&A (3+2 choice rule).\n  - `spike`: Prototype implementation by @tech-lead (relaxed boundaries).\n  - `task`: Production implementation (≤2 allowed files).\n- Downstream Hand-Off:\n  - Phase 2 (PO) reads Decisions So Far to define epics/user journeys.\n  - Phase 4 (Architect) converts decisions into technical specs (`.harness/spec/features/<feature>/technical/spec.md`).\n  - Phase 5 (PO) slices resolved tickets into atomic task manifests (`.harness/tasks/task-XXX.md`).\n",
-			"skill-linear-cli.md":
-				"# Skill: Linear CLI Management\n\n## Objective\nManage Linear issues, teams, projects, and cycles from the command line using `linear` CLI tool.\n\n## Core Commands\n- List assigned issues: `linear issue list --assigned`\n- View issue details: `linear issue view <issue-id>`\n- Create new issue: `linear issue create --title \"<title>\" --description \"<desc>\"`\n- Update issue status: `linear issue update <issue-id> --state \"In Progress\"` (or \"Done\")\n- Comment on issue: `linear issue comment <issue-id> --body \"<message>\"` -- use for status updates on task close.\n",
+			"skill-harness.md": [
+				"# Skill: AI Workflow Harness Meta-Framework",
+				"",
+				"## Objective",
+				"Operate the 2-tier XP workflow, SQLite spec engine, boundary enforcement, and circuit breaker gates.",
+				"",
+				"## 1. Core Architecture Invariants",
+				"- **2-Tier XP Planning:** Tier 1 (`harness init` / `harness analyze`) for brownfield discovery and project vision; Tier 2 (`harness feature <name>`) for 1-pass Agile feature slicing.",
+				"- **2-Level Context Caching:** Always load `.harness/spec/app-summary.md` first. Load sub-specs (`business/`, `ui/`, `technical/`) only when implementing that specific feature.",
+				"- **File Boundary Isolation:** Modify ONLY files listed in `## 1. Allowed File Boundaries` of the active task manifest (`.harness/tasks/task-XXX.md`). Maximum 2 allowed files per task.",
+				"- **Deterministic Verification:** Require test exit code 0 (`harness verify`) before setting task status to `DONE`.",
+				"- **3-Strike Circuit Breaker:** 3 consecutive test/verification failures trigger automated Git rollback to stash checkpoint.",
+				"",
+				"## 2. CLI Engines & Workflow Commands",
+				"- `harness init` — Scaffold 17 directories, agent configurations, skills, and seed SQLite spec database.",
+				"- `harness analyze` — Scan brownfield repositories and extract core modules without interactive prompts.",
+				"- `harness feature <name> --files <paths>` — Generate atomic task manifest with risk level evaluation.",
+				"- `harness start <task-id>` — Create git branch `task/<id>` and transition status to `IN_PROGRESS`.",
+				"- `harness preflight <task-id>` — AST boundary check, working tree cleanliness, and secret scanning.",
+				"- `harness verify <task-id>` — Execute test/lint suite, sanitize error cards, enforce exit-0 gate.",
+				"- `harness close <task-id>` — Complete task, write spawn-log receipt, transition status to `DONE`.",
+			].join("\n"),
+
+			"skill-caveman.md": [
+				"# Skill: Caveman Token Brevity Mode",
+				"",
+				"## Objective",
+				"Cuts context token consumption by ~65% while maintaining 100% technical accuracy and code completeness.",
+				"",
+				"## Operational Rules",
+				"1. **No Conversational Filler:** Eliminate greetings ('Hello!', 'Sure!'), confirmations ('I understand'), and summaries ('Here is what I did').",
+				"2. **Dense Output Format:** Output structured status cards, concise bullet points, and code diffs only.",
+				"3. **Maximum Signal-to-Noise Ratio:** Every token emitted must represent architectural decisions, code modifications, or deterministic test results.",
+				"4. **No Code Omissions:** Never use `// ... rest of code` or partial snippets inside edited blocks.",
+			].join("\n"),
+
+			"skill-context-caching.md": [
+				"# Skill: 2-Level Context Window Caching",
+				"",
+				"## Objective",
+				"Minimize prompt cost across multi-turn agent sessions using structured specification layering.",
+				"",
+				"## Caching Protocol",
+				"1. **Level 1 (Anchor):** Always load `.harness/spec/app-summary.md` into the prompt context on session start.",
+				"2. **Level 2 (Demand):** Drill down to `.harness/spec/features/<feature>/README.md` and sub-specs (`business/`, `ui/`, `technical/`) ONLY when actively implementing that feature.",
+				"3. **Zero Unneeded Files:** Never load unreferenced source files or entire directories into the context window.",
+			].join("\n"),
+
+			"skill-wayfinder-harness.md": [
+				"# Skill: Wayfinder Planning (Harness-Adapted)",
+				"",
+				"## Objective",
+				"Chart large planning efforts by creating discovery Maps at `.harness/memory/discovery/<feature>-map.md`, then resolving decision tickets one at a time until the way is clear.",
+				"",
+				"## Core Rules",
+				"- Plan, don't code: Produce decisions and specifications, not implementation code.",
+				"- Wayfinder Grilling (3+2 Choice Rule): @architect-agent MUST ask structured questions presenting 3 recommended options, Option 4 (Other write-in), and Option 5 (Explain / Need context).",
+				"- Discovery Map Structure:",
+				"  - Destination: High-level goal and success criteria.",
+				"  - Notes: Key context, user constraints, stack preferences.",
+				"  - Decisions So Far: Confirmed technical and business choices.",
+				"  - Fog of War: Undecided requirements (ticketed for resolution before slicing).",
+				"  - Out of Scope: Explicitly excluded features/technologies.",
+				"- Ticket Types:",
+				"  - `research`: Broad codebase or market analysis (unbounded).",
+				"  - `grilling`: Interactive user Q&A (3+2 choice rule).",
+				"  - `spike`: Prototype implementation by @tech-lead (relaxed boundaries).",
+				"  - `task`: Production implementation (≤2 allowed files).",
+				"- Downstream Hand-Off:",
+				"  - Phase 2 (PO) reads Decisions So Far to define epics/user journeys.",
+				"  - Phase 4 (Architect) converts decisions into technical specs (`.harness/spec/features/<feature>/technical/spec.md`).",
+				"  - Phase 5 (PO) slices resolved tickets into atomic task manifests (`.harness/tasks/task-XXX.md`).",
+			].join("\n"),
+
+			"skill-linear-cli.md": [
+				"# Skill: Linear CLI Issue Management",
+				"",
+				"## Objective",
+				"Manage Linear issues, teams, projects, and cycles from the command line using `linear` CLI tool.",
+				"",
+				"## Core Commands",
+				"- List assigned issues: `linear issue list --assigned`",
+				"- View issue details: `linear issue view <issue-id>`",
+				"- Create new issue: `linear issue create --title \"<title>\" --description \"<desc>\"`",
+				"- Update issue status: `linear issue update <issue-id> --state \"In Progress\"` (or \"Done\")",
+				"- Comment on issue: `linear issue comment <issue-id> --body \"<message>\"` — use for status updates on task close.",
+			].join("\n"),
 		};
 	}
 
 	public static getStackSkills(): Record<string, string> {
 		return {
-			"skill-tailwind-shadcn.md":
-				"# Skill: Tailwind & Component Architecture\n\n## Rules\n- Use utility-first Tailwind classes adhering to design system tokens.\n- Maintain accessibility attributes (`aria-*`, `role`, focus states).\n- Keep presentation logic separate from data hooks.\n",
-			"skill-tanstack-query.md":
-				"# Skill: TanStack Query Best Practices\n\n## Rules\n- Declare standardized query keys using array tuples `['resource', id]`.\n- Implement optimistic updates for mutating actions with automatic rollback.\n- Centralize API fetchers in dedicated service modules.\n",
-			"skill-expo-router.md":
-				"# Skill: Expo Router & React Native\n\n## Rules\n- Follow file-based routing conventions in `app/`.\n- Utilize `react-native-reanimated` for 60fps UI transitions.\n- Ensure safe area insets are respected across iOS and Android.\n",
-			"skill-typescript-strict.md":
-				"# Skill: Strict TypeScript & Zod\n\n## Rules\n- Enforce `strict: true` with zero usage of `any` (use `unknown` + type guards).\n- Derive runtime types from Zod schemas using `z.infer<typeof Schema>`.\n- Use discriminated unions for distinct application states.\n",
-			"skill-idiomatic-go.md":
-				'# Skill: Idiomatic Golang\n\n## Rules\n- Always accept `context.Context` as the first argument in I/O methods.\n- Explicitly wrap errors using `fmt.Errorf("action: %w", err)`.\n- Use structured logging via standard library `log/slog`.\n',
-			"skill-sqlc.md":
-				"# Skill: sqlc Type-Safe SQL\n\n## Rules\n- Author pure SQL queries with annotated query names `-- name: GetUser :one`.\n- Run `sqlc generate` to produce type-safe Go structs without ORM overhead.\n",
-			"skill-postgres-schema-design.md":
-				"# Skill: PostgreSQL Schema & Migration Strategy\n\n## Rules\n- All foreign keys must include explicit index coverage.\n- Author migrations with deterministic down/rollback scripts.\n- Use `TIMESTAMPTZ` for all temporal columns.\n",
-			"skill-dynamodb-single-table.md":
-				"# Skill: DynamoDB Single-Table Design\n\n## Rules\n- Model access patterns before defining Partition (`PK`) and Sort (`SK`) keys.\n- Use composite sort keys with delimiters (e.g., `USER#123#METADATA`).\n",
+			"skill-tailwind-shadcn.md": [
+				"# Skill: Tailwind CSS & Component Architecture",
+				"",
+				"## Rules & Invariants",
+				"- Use utility-first Tailwind classes adhering strictly to established design system tokens.",
+				"- Maintain accessibility attributes (`aria-*`, `role`, focus visible states) across all interactive elements.",
+				"- Keep presentation logic separate from custom data hooks.",
+				"- Support seamless dark mode and glassmorphism styling.",
+			].join("\n"),
+
+			"skill-tanstack-query.md": [
+				"# Skill: TanStack Query Best Practices",
+				"",
+				"## Rules & Invariants",
+				"- Declare standardized query keys using array tuples `['resource', id]`.",
+				"- Implement optimistic updates for mutating actions with automatic rollback on error.",
+				"- Centralize API fetchers in dedicated service modules with typed responses.",
+			].join("\n"),
+
+			"skill-expo-router.md": [
+				"# Skill: Expo Router & React Native Architecture",
+				"",
+				"## Rules & Invariants",
+				"- Follow file-based routing conventions inside `app/` directory.",
+				"- Utilize `react-native-reanimated` for smooth 60fps UI transitions.",
+				"- Ensure safe area insets are respected across iOS and Android viewports.",
+			].join("\n"),
+
+			"skill-typescript-strict.md": [
+				"# Skill: Strict TypeScript & Zod Type Safety",
+				"",
+				"## Rules & Invariants",
+				"- Enforce `strict: true` with ZERO usage of `any` (use `unknown` + type guards).",
+				"- Derive runtime types from Zod schemas using `z.infer<typeof Schema>`.",
+				"- Use discriminated unions for distinct application state representations.",
+				"- Maintain explicit return types on all public export functions.",
+			].join("\n"),
+
+			"skill-idiomatic-go.md": [
+				"# Skill: Idiomatic Golang Architecture",
+				"",
+				"## Rules & Invariants",
+				"- Always accept `context.Context` as the first argument in I/O and database methods.",
+				"- Explicitly wrap errors using `fmt.Errorf(\"action: %w\", err)`.",
+				"- Use structured logging via standard library `log/slog`.",
+			].join("\n"),
+
+			"skill-sqlc.md": [
+				"# Skill: sqlc Type-Safe SQL Queries",
+				"",
+				"## Rules & Invariants",
+				"- Author pure SQL queries with annotated query names `-- name: GetUser :one`.",
+				"- Run `sqlc generate` to produce type-safe Go structs without ORM overhead.",
+			].join("\n"),
+
+			"skill-postgres-schema-design.md": [
+				"# Skill: PostgreSQL Schema & Migration Strategy",
+				"",
+				"## Rules & Invariants",
+				"- All foreign keys must include explicit index coverage.",
+				"- Author migrations with deterministic down/rollback scripts.",
+				"- Use `TIMESTAMPTZ` for all temporal columns.",
+			].join("\n"),
+
+			"skill-dynamodb-single-table.md": [
+				"# Skill: DynamoDB Single-Table Design",
+				"",
+				"## Rules & Invariants",
+				"- Model access patterns before defining Partition (`PK`) and Sort (`SK`) keys.",
+				"- Use composite sort keys with delimiters (e.g. `USER#123#METADATA`).",
+			].join("\n"),
 		};
 	}
 
 	public static getTestingSkills(): Record<string, string> {
 		return {
-			"skill-tdd-assertions.md":
-				"# Skill: Test-Driven Development (TDD)\n\n## Rules\n- Author failing tests first before modifying implementation code.\n- Ensure tests assert specific error messages, not just truthiness.\n",
-			"skill-zero-noise-reporter.md":
-				"# Skill: Zero-Noise Test Diagnostic Reporting\n\n## Rules\n- Output concise failure cards containing only: Suite Name, Target File, Line Number, and Expected vs Actual values.\n- Do not output successful assertions or hundreds of irrelevant stack trace lines.\n",
+			"skill-tdd-assertions.md": [
+				"# Skill: Test-Driven Development (TDD) Assertions",
+				"",
+				"## Objective & Discipline",
+				"Author comprehensive, failing test suites BEFORE any implementation code begins (RED phase of TDD).",
+				"",
+				"## Mandatory Assertion Rules",
+				"1. **Happy Path:** Assert specific expected return values, payload structures, and side effects.",
+				"2. **Sad Path FIRST:** Error handling is more important than happy path. Test invalid input rejection using specific error matchers (e.g. `toThrow()`).",
+				"3. **No Soft Assertions:** Never use `toBeTruthy()` or `toBeDefined()` alone — assert exact values.",
+				"4. **Isolation:** Mock external dependencies (filesystem, network, DB) — tests must run deterministically in isolated sandbox.",
+			].join("\n"),
+
+			"skill-zero-noise-reporter.md": [
+				"# Skill: Zero-Noise Test Diagnostic Reporting",
+				"",
+				"## Objective",
+				"Format test failures into concise, actionable diagnostic cards to prevent log pollution.",
+				"",
+				"## Diagnostic Card Format",
+				"```",
+				"┌────────────────────────────────────────────────────────┐",
+				"│ ✖ TEST FAILURE: [Suite Name]                           │",
+				"├────────────────────────────────────────────────────────┤",
+				"│ Target File: <file-path>:<line-number>                  │",
+				"│ Expected:    <expected-value>                          │",
+				"│ Received:    <actual-value>                            │",
+				"└────────────────────────────────────────────────────────┘",
+				"```",
+			].join("\n"),
 		};
 	}
 
 	public static getPipelineStandards(): Record<string, string> {
 		return {
-			"phase-1-discovery.md":
-				"# Phase 1: Problem Discovery & Baseline Audit\n\n## 1. Objective & Role\nEstablish clear feature goals and non-negotiable architectural constraints BEFORE code implementation begins. Lead by @architect-agent.\n\n## 2. Interactive Wayfinder Grilling Protocol (3+2 Choice Rule)\nWhen interviewing the user, @architect-agent MUST use structured Q&A:\n- Present each question with **3 recommended options** + **Option 4: Write-in / Other** + **Option 5: Explain / Need context**.\n- Never ask open-ended ambiguous questions without concrete suggestions.\n- Resolve one branch of the decision tree at a time.\n\n## 3. Mandatory Phase 1 Deliverables\n1. **Discovery Map:** Saved to `.harness/memory/discovery/<feature>-map.md` containing:\n   - **Destination:** High-level feature goal and success criteria.\n   - **Notes:** Key context, user constraints, stack preferences.\n   - **Decisions So Far:** Confirmed technical and business choices.\n   - **Fog of War:** Undecided requirements (ticketed for resolution before slicing).\n   - **Out of Scope:** Explicitly excluded items.\n2. **Interview Transcript:** Saved to `.harness/memory/discovery/<feature>.md`.\n3. **Spec Database Feature Seed:** Upsert feature record into `.harness/harness.db` and export to `.harness/spec/app-summary.md`.\n\n## 4. Downstream Integration & Pipeline Usefulness\n- **Phase 2 (PO):** Reads Discovery Map to define epics and user journeys.\n- **Phase 4 (Architect):** Uses Decisions So Far to author technical specs (`.harness/spec/features/<feature>/technical/spec.md`).\n- **Phase 5 (PO):** Converts resolved tickets into atomic tasks (`.harness/tasks/task-XXX.md`).\n",
-			"phase-2-strategy.md":
-				"# Phase 2: Functional Scope & Workflow Strategy\n\n## 1. Functional Scope\nDefine epics, user journeys, and validate AI execution topology (Orchestrated, Solo, Vibe-Assist).\n",
-			"phase-3-design.md":
-				"# Phase 3: Visualization & Design Architecture\n\n## 1. Component Registry\nDefine reusable components in `.harness/UI/custom-components-registry.ts` and details in `.harness/UI/details/<name>/`.\n",
-			"phase-4-architecture.md":
-				"# Phase 4: Technical Architecture & Contracts\n\n## 1. Contracts & ADRs\nDefine API contracts, DB schemas, and technical specs (≤500 lines) in `.harness/spec/features/<feature>/technical/spec.md`.\n",
-			"phase-5-slicing.md":
-				"# Phase 5: User Story Slicing & Task Backlog\n\n## 1. Task Invariants\nSlice specs into atomic manifests in `.harness/tasks/task-XXX.md` touching ≤2 files each.\n",
+			"phase-1-discovery.md": [
+				"# Phase 1: Problem Discovery & Baseline Audit",
+				"",
+				"## 1. Objective & Role",
+				"Establish clear feature goals and non-negotiable architectural constraints BEFORE code implementation begins. Lead by @architect-agent.",
+				"",
+				"## 2. Interactive Wayfinder Grilling Protocol (3+2 Choice Rule)",
+				"When interviewing the user, @architect-agent MUST use structured Q&A:",
+				"- Present each question with **3 recommended options** + **Option 4: Write-in / Other** + **Option 5: Explain / Need context**.",
+				"- Never ask open-ended ambiguous questions without concrete suggestions.",
+				"- Resolve one branch of the decision tree at a time.",
+				"",
+				"## 3. Mandatory Phase 1 Deliverables",
+				"1. **Discovery Map:** Saved to `.harness/memory/discovery/<feature>-map.md` containing:",
+				"   - **Destination:** High-level feature goal and success criteria.",
+				"   - **Notes:** Key context, user constraints, stack preferences.",
+				"   - **Decisions So Far:** Confirmed technical and business choices.",
+				"   - **Fog of War:** Undecided requirements (ticketed for resolution before slicing).",
+				"   - **Out of Scope:** Explicitly excluded items.",
+				"2. **Interview Transcript:** Saved to `.harness/memory/discovery/<feature>.md`.",
+				"3. **Spec Database Feature Seed:** Upsert feature record into `.harness/harness.db` and export to `.harness/spec/app-summary.md`.",
+				"",
+				"## 4. Downstream Integration & Pipeline Usefulness",
+				"- **Phase 2 (PO):** Reads Discovery Map to define epics and user journeys.",
+				"- **Phase 4 (Architect):** Uses Decisions So Far to author technical specs (`.harness/spec/features/<feature>/technical/spec.md`).",
+				"- **Phase 5 (PO):** Converts resolved tickets into atomic tasks (`.harness/tasks/task-XXX.md`).",
+			].join("\n"),
+
+			"phase-2-strategy.md": [
+				"# Phase 2: Functional Scope & Workflow Strategy",
+				"",
+				"## 1. Objective & Role",
+				"Translate Phase 1 Discovery Maps into user personas, epic boundaries, and validation rules. Lead by @po-agent.",
+				"",
+				"## 2. Execution Discipline",
+				"- **User Journeys:** Define explicit persona entry points, action flows, and success outcomes.",
+				"- **Epic Scope Boundaries:** Group functional requirements into coherent, non-overlapping epics.",
+				"- **Topology Validation:** Confirm AI execution mode (`orchestrated`, `solo-agent`, or `vibe-assist`).",
+				"- **Zero Code Rule:** @po-agent authors SPECIFICATIONS ONLY, never production source code.",
+				"",
+				"## 3. Deliverables",
+				"- Write functional specification to `.harness/spec/features/<feature>/business/spec.md`.",
+				"- Define acceptance criteria checklist for downstream task generation.",
+			].join("\n"),
+
+			"phase-3-design.md": [
+				"# Phase 3: Visualization & Design Architecture",
+				"",
+				"## 1. Objective & Role",
+				"Establish visual layout, component hierarchies, and interactive state flows before coding frontend features. Lead by @designer-lead & @designer-ui.",
+				"",
+				"## 2. Execution Discipline",
+				"- **ASCII Wireframe Layouts:** Author structural ASCII component layouts in `wireframe-ascii.md`.",
+				"- **Mermaid State Diagrams:** Model interactive UI transitions, loading states, and error flows in `route-flow-mermaid.md`.",
+				"- **Design System Consistency:** Adhere strictly to Tailwind design tokens, typography, and color palettes.",
+				"",
+				"## 3. Deliverables",
+				"- Register reusable components in `.harness/UI/custom-components-registry.ts`.",
+				"- Write detailed component breakdown to `.harness/UI/details/<component-name>/spec.md`.",
+				"- Write UI specification to `.harness/spec/features/<feature>/ui/spec.md`.",
+			].join("\n"),
+
+			"phase-4-architecture.md": [
+				"# Phase 4: Technical Architecture & Contracts",
+				"",
+				"## 1. Objective & Role",
+				"Design robust data schemas, type contracts, and API interface specifications. Lead by @architect-agent.",
+				"",
+				"## 2. Technical Invariants",
+				"- **Strict Type Safety:** Derive runtime validation using Zod schemas with zero `any` usage.",
+				"- **API Contracts:** Define exact payload shapes, HTTP status codes, and error response structures.",
+				"- **Architectural Decision Records (ADRs):** Author lightweight ADRs for non-trivial tech stack or library choices.",
+				"- **Zero-Code Rule:** @architect-agent authors SPECIFICATIONS ONLY, never production source code.",
+				"",
+				"## 3. Deliverables",
+				"- Write technical specification to `.harness/spec/features/<feature>/technical/spec.md` (max 500 lines).",
+				"- Define schema migration SQL / models in database layer.",
+			].join("\n"),
+
+			"phase-5-slicing.md": [
+				"# Phase 5: User Story Slicing & Task Backlog",
+				"",
+				"## 1. Objective & Role",
+				"Break down technical and UI specs into atomic, boundary-isolated execution tasks touching ≤2 files each. Lead by @po-agent & @tech-lead.",
+				"",
+				"## 2. Task Slicing Rules",
+				"- **File Boundary Isolation:** Every task manifest MUST specify explicit allowed files in `## 1. Allowed File Boundaries`.",
+				"- **Strict File Limit:** Maximum 2 allowed files per task to ensure small context window footprints.",
+				"- **Negative-Proof Acceptance Criteria:** Include explicit happy-path AND error/boundary rejection criteria.",
+				"- **Deterministic Verification:** Include explicit verification command block (e.g. `bun test <target>`).",
+				"- **Git Commit Authority:** @tech-lead is sole Git commit authority upon 100% verification pass.",
+				"",
+				"## 3. Deliverables",
+				"- Author atomic task manifests in `.harness/tasks/task-XXX.md`.",
+				"- Set initial status to `TODO`.",
+			].join("\n"),
 		};
 	}
 
