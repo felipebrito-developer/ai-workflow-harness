@@ -68,6 +68,14 @@ export async function runStart(taskId: string): Promise<void> {
 		chalk.dim(`- Allowed Boundaries: ${manifest.allowedFiles.join(", ")}`),
 	);
 
+	// 3. Record Task Start Session in SpawnLogger
+	const { SpawnLogger } = await import("../engines/spawn-logger.js");
+	await SpawnLogger.recordTaskStart(
+		manifest.frontmatter.id,
+		"tech-lead",
+		manifest.allowedFiles,
+	);
+
 	// 3. Memory Backend Integration
 	try {
 		const config = await ConfigManager.load();

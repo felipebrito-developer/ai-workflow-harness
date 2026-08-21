@@ -67,34 +67,26 @@ export class CircuitBreaker {
 		taskId: string,
 		state: TaskAttemptState,
 	): Promise<void> {
-		const spawnLogDir = path.resolve(
-			process.cwd(),
-			".harness/memory/spawn-log",
+		const { SpawnLogger } = await import("./spawn-logger.js");
+		const taskState = await SpawnLogger.getTaskState(taskId);
+		const endTime = new Date().toISOString();
+		const durationSeconds = Math.max(
+			0.1,
+			(new Date(endTime).getTime() - new Date(taskState.startTime).getTime()) /
+				1000,
 		);
-		await fs.mkdir(spawnLogDir, { recursive: true });
 
-		const logPath = path.join(spawnLogDir, `circuit-breaker-${taskId}.md`);
-		const content = [
-			`# Spawn Log — Circuit Breaker Tripped — ${taskId}`,
-			"",
-			`> **Task:** ${taskId}`,
-			"> **Outcome:** BLOCKED",
-			`> **Written:** ${new Date().toISOString()}`,
-			"",
-			"## Reason",
-			`- Task failed ${state.attempts} consecutive verification attempts.`,
-			`- Last Failed Command: \`${state.lastFailedCommand}\``,
-			"",
-			"## Failure Signature",
-			"```text",
-			state.lastFailureReason || "Unknown failure signature",
-			"```",
-			"",
-			"## Action Taken",
-			"- Working tree files matching task boundaries have been automatically rolled back to prevent context contamination.",
-			"- Developer intervention or Task Slicing required.",
-		].join("\n");
-
-		await fs.writeFile(logPath, content, "utf-8");
+		await SpawnLogger.writeReceipt({
+			taskId,
+			agentName: state.agentName || taskState.agentName || "tech-lead",
+			status: "CIRCUIT_TRIPPED",
+			startTime: taskState.startTime,
+			endTime,
+			durationSeconds,
+			tokenUsage: state.tokenUsage || taskState.tokenUsage,
+			allowedFiles: taskState.allowedFiles || [],
+			failureReason: state.lastFailureReason,
+			lastFailedCommand: state.lastFailedCommand,
+		});
 	}
 }
