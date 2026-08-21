@@ -12,7 +12,7 @@ Integrated into `harness audit`, `harness preflight`, and `harness verify`:
    - Scans uncommitted working tree diffs and staged commits for credentials (`.env`, `AWS_KEY`, `RSA_PRIVATE_KEY`, API tokens).
    - Hard Fails (Exit Code 1) if secrets or unignored `.env` files are detected.
 2. **Dependency Vulnerability Inspector:**
-   - Executes `bun audit` (Node/Bun) and `govulncheck ./...` (Golang).
+   - Executes `bun audit` (Node/Bun), `npm audit`, `pip audit` (Python), `cargo audit` (Rust), and `govulncheck ./...` (Golang).
    - Reports high-severity package vulnerabilities before deployment.
 3. **File Boundary Interceptor:**
    - Ensures agents edit ONLY files explicitly listed under `Allowed File Boundaries` in `task-XXX.md`.

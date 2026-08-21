@@ -9,10 +9,10 @@ dist/
 # Memory runtime
 .harness/memory/*
 !.harness/memory/.gitignore
-!memory/attempts/.gitkeep
+!.harness/memory/attempts/.gitkeep
 
 # Ephemeral scratchpad
-temp/scripts/*
-temp/assets/*
-temp/artifacts/*
-!temp/*/.gitkeep
+.harness/temp/scripts/*
+.harness/temp/assets/*
+.harness/temp/artifacts/*
+!.harness/temp/*/.gitkeep

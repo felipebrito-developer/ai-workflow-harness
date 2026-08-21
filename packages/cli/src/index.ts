@@ -12,56 +12,79 @@ import { runVerify } from "./commands/verify.js";
 
 const program = new Command();
 
-program
-  .name("harness")
-  .description("Standardized, Token-Efficient AI Development Framework")
-  .version("1.0.0");
+function validateTaskId(taskId: string): string {
+	if (!/^[a-zA-Z0-9_-]+$/.test(taskId)) {
+		console.error(
+			"Error: Invalid task ID format. Must contain only alphanumeric characters, underscores, or hyphens.",
+		);
+		process.exit(1);
+	}
+	return taskId;
+}
 
 program
-  .command("init")
-  .description("Initialize .harness framework in the current repository")
-  .action(runInit);
+	.name("harness")
+	.description("Standardized, Token-Efficient AI Development Framework")
+	.version("1.0.0");
 
 program
-  .command("analyze")
-  .description("Run Brownfield Zero-Prompt auto-discovery & seed SQLite specs")
-  .action(runAnalyze);
+	.command("init")
+	.description("Initialize .harness framework in the current repository")
+	.action(runInit);
 
 program
-  .command("audit")
-  .description("Run security secret leak scan and dependency vulnerability checks")
-  .action(runAudit);
+	.command("analyze")
+	.description("Run Brownfield Zero-Prompt auto-discovery & seed SQLite specs")
+	.action(runAnalyze);
 
 program
-  .command("feature <name>")
-  .description("Generate 1-pass Agile feature specs, mockup, contract & atomic tasks")
-  .option("-f, --files <files>", "Comma-separated list of target files")
-  .option("-s, --isSchema", "Mark if task alters database schema or API contract")
-  .action((name, options) => runFeature(name, options));
+	.command("audit")
+	.description(
+		"Run security secret leak scan and dependency vulnerability checks",
+	)
+	.action(runAudit);
 
 program
-  .command("start <taskId>")
-  .description("Switch to isolated branch and mark task IN_PROGRESS")
-  .action(runStart);
+	.command("feature <name>")
+	.description(
+		"Generate 1-pass Agile feature specs, mockup, contract & atomic tasks",
+	)
+	.option("-f, --files <files>", "Comma-separated list of target files")
+	.option(
+		"-s, --isSchema",
+		"Mark if task alters database schema or API contract",
+	)
+	.action((name, options) => runFeature(name, options));
 
 program
-  .command("preflight <taskId>")
-  .description("Run AST validation, secret diff scan, and generate agent echo contract")
-  .action(runPreflight);
+	.command("start <taskId>")
+	.description("Switch to isolated branch and mark task IN_PROGRESS")
+	.action((taskId) => runStart(validateTaskId(taskId)));
 
 program
-  .command("verify <taskId>")
-  .description("Execute deterministic tests/linter with circuit breaker & vibe mode auto-expansion")
-  .action(runVerify);
+	.command("preflight <taskId>")
+	.description(
+		"Run AST validation, secret diff scan, and generate agent echo contract",
+	)
+	.action((taskId) => runPreflight(validateTaskId(taskId)));
 
 program
-  .command("checkpoint <taskId>")
-  .description("Stash uncommitted diffs for Delta Protocol scope triage")
-  .action(runCheckpoint);
+	.command("verify <taskId>")
+	.description(
+		"Execute deterministic tests/linter with circuit breaker & vibe mode auto-expansion",
+	)
+	.action((taskId) => runVerify(validateTaskId(taskId)));
 
 program
-  .command("close <taskId>")
-  .description("Validate boundaries, mark task DONE, export SQLite specs & record spawn log")
-  .action(runClose);
+	.command("checkpoint <taskId>")
+	.description("Stash uncommitted diffs for Delta Protocol scope triage")
+	.action((taskId) => runCheckpoint(validateTaskId(taskId)));
+
+program
+	.command("close <taskId>")
+	.description(
+		"Validate boundaries, mark task DONE, export SQLite specs & record spawn log",
+	)
+	.action((taskId) => runClose(validateTaskId(taskId)));
 
 program.parse(process.argv);

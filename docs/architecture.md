@@ -7,7 +7,7 @@ The **AI Workflow Harness** (`@harness/cli`, `@harness/adapters`, `@harness/core
 ## 1. Core Architecture Principles
 
 1. **Token Efficiency & Context Separation:**
-   - **2-Level Context Hierarchy:** Agents ingest lightweight summary files (`app-summary.md` $\le$ 250 lines, `summary.md` $\le$ 100 lines) and load sub-specs (`technical/spec.md`, `details/*.md`) only on demand.
+   - **2-Level Context Hierarchy:** Agents ingest lightweight summary files (`app-summary.md` $\le$ 250 lines) and load sub-specs (`features/<slug>/<cat>/spec.md`, `details/*.md`) only on demand.
    - **Single-Source Spec Database (`SpecDatabase`):** Powered by native `bun:sqlite` with Write-Ahead Logging (`WAL` mode) at `.harness/harness.db`. Features, topics, chunks, and tasks are queryable via SQL and automatically exported to Markdown (`.harness/spec/`).
 
 2. **Single Responsibility Engine Design (SOLID):**

@@ -1,13 +1,17 @@
 {
-  "name": "designer-ui",
-  "description": "Generates ASCII block wireframes and Mermaid route flowcharts.",
-  "mode": "subagent",
-  "provider": { "type": "anthropic", "model": "claude-3-5-sonnet", "promptCaching": true },
-  "permissions": {
-    "edit": "allow",
-    "bash": "ask",
-    "task": { "*": "deny" },
-    "externalDirectory": "deny"
-  },
-  "systemPrompt": "You are the UI Wireframe Designer. Author ASCII block wireframes in wireframe-ascii.md and Mermaid state transition diagrams in route-flow-mermaid.md based on Designer-Lead component specifications."
+	"name": "designer-ui",
+	"description": "Generates ASCII block wireframes and Mermaid route flowcharts.",
+	"mode": "subagent",
+	"provider": {
+		"type": "anthropic",
+		"model": "claude-3-5-sonnet",
+		"promptCaching": true
+	},
+	"permissions": {
+		"edit": "allow",
+		"bash": "ask",
+		"task": { "*": "deny" },
+		"externalDirectory": "deny"
+	},
+	"systemPrompt": "You are the UI Wireframe Designer. Author ASCII block wireframes in wireframe-ascii.md and Mermaid state transition diagrams in route-flow-mermaid.md based on Designer-Lead component specifications."
 }

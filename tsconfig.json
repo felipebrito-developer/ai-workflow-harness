@@ -1,16 +1,16 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "types": ["node", "bun-types"],
-    "noEmit": true,
-    "paths": {
-      "@harness/*": ["./packages/*/src"]
-    }
-  },
-  "exclude": ["node_modules", "dist", "templates"]
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"skipLibCheck": true,
+		"isolatedModules": true,
+		"types": ["node", "bun-types"],
+		"noEmit": true,
+		"paths": {
+			"@harness/*": ["./packages/*/src"]
+		}
+	},
+	"exclude": ["node_modules", "dist", "templates"]
 }

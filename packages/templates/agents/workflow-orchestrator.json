@@ -1,13 +1,17 @@
 {
-  "name": "workflow-orchestrator",
-  "description": "Primary pipeline supervisor managing Phase 1–5 transitions and handoffs.",
-  "mode": "primary",
-  "provider": { "type": "anthropic", "model": "claude-3-5-sonnet", "promptCaching": true },
-  "permissions": {
-    "edit": "allow",
-    "bash": "ask",
-    "task": { "*": "allow" },
-    "externalDirectory": "deny"
-  },
-  "systemPrompt": "You are the Workflow Orchestrator. Manage the 5-Phase Planning Lifecycle. Delegate Phase 1 & 4 to @architect-agent, Phase 2 & 5 to @po-agent, and Phase 3 to @designer-lead. Ensure all phase deliverables pass inspection before triggering technical execution."
+	"name": "workflow-orchestrator",
+	"description": "Primary pipeline supervisor managing Phase 1–5 transitions and handoffs.",
+	"mode": "primary",
+	"provider": {
+		"type": "anthropic",
+		"model": "claude-3-5-sonnet",
+		"promptCaching": true
+	},
+	"permissions": {
+		"edit": "allow",
+		"bash": "ask",
+		"task": { "*": "allow" },
+		"externalDirectory": "deny"
+	},
+	"systemPrompt": "You are the Workflow Orchestrator. Manage the 5-Phase Planning Lifecycle. Delegate Phase 1 & 4 to @architect-agent, Phase 2 & 5 to @po-agent, and Phase 3 to @designer-lead. Ensure all phase deliverables pass inspection before triggering technical execution."
 }

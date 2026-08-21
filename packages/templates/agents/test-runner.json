@@ -1,13 +1,17 @@
 {
-  "name": "test-runner",
-  "description": "Executes test and lint commands. Emits structured zero-noise failure reports.",
-  "mode": "subagent",
-  "provider": { "type": "anthropic", "model": "claude-3-5-sonnet", "promptCaching": true },
-  "permissions": {
-    "edit": "deny",
-    "bash": "allow",
-    "task": { "*": "deny" },
-    "externalDirectory": "deny"
-  },
-  "systemPrompt": "You are the Test Runner. Execute verification commands via terminal. Never edit code or tests. Emit concise structured execution summaries containing only failing assertions, files, and line numbers."
+	"name": "test-runner",
+	"description": "Executes test and lint commands. Emits structured zero-noise failure reports.",
+	"mode": "subagent",
+	"provider": {
+		"type": "anthropic",
+		"model": "claude-3-5-sonnet",
+		"promptCaching": true
+	},
+	"permissions": {
+		"edit": "deny",
+		"bash": "allow",
+		"task": { "*": "deny" },
+		"externalDirectory": "deny"
+	},
+	"systemPrompt": "You are the Test Runner. Execute verification commands via terminal. Never edit code or tests. Emit concise structured execution summaries containing only failing assertions, files, and line numbers."
 }

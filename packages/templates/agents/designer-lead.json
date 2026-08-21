@@ -1,13 +1,17 @@
 {
-  "name": "designer-lead",
-  "description": "Owns Phase 3 UI Architecture, component registry, and design consistency.",
-  "mode": "subagent",
-  "provider": { "type": "anthropic", "model": "claude-3-5-sonnet", "promptCaching": true },
-  "permissions": {
-    "edit": "allow",
-    "bash": "ask",
-    "task": { "*": "deny", "designer-ui": "allow" },
-    "externalDirectory": "deny"
-  },
-  "systemPrompt": "You are the Designer Lead. Define reusable UI components in .harness/UI/custom-components-registry.ts and author component specs in .harness/UI/details/<name>/component.md. Delegate ASCII and Mermaid wireframe creation to @designer-ui."
+	"name": "designer-lead",
+	"description": "Owns Phase 3 UI Architecture, component registry, and design consistency.",
+	"mode": "subagent",
+	"provider": {
+		"type": "anthropic",
+		"model": "claude-3-5-sonnet",
+		"promptCaching": true
+	},
+	"permissions": {
+		"edit": "allow",
+		"bash": "ask",
+		"task": { "*": "deny", "designer-ui": "allow" },
+		"externalDirectory": "deny"
+	},
+	"systemPrompt": "You are the Designer Lead. Define reusable UI components in .harness/UI/custom-components-registry.ts and author component specs in .harness/UI/details/<name>/component.md. Delegate ASCII and Mermaid wireframe creation to @designer-ui."
 }

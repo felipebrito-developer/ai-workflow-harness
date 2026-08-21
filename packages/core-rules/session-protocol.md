@@ -8,9 +8,9 @@
 ## 1. Startup Context Discipline (2-Level Cache)
 Never load raw source code or all spec files at session initialization. Drill down in strict order:
 1. .harness/spec/app-summary.md          → "What is the system & what features exist?" (≤250 lines)  
-2. .harness/spec/features//README  → "What is this feature's index & scope?" (≤250 lines)[cite: 10]
+2. .harness/spec/features/<feature>/<category>/spec.md  → "What is this feature's index & scope?" (≤250 lines)[cite: 10]
 3. .harness/tasks/task-XXX.md            → "What is the active atomic task & allowed file boundary?"  
-4. .harness/spec/features// → Load technical/ui/business spec ONLY when implementing[cite: 8, 10]
+4. .harness/spec/features/<feature>/ → Load technical/ui/business spec ONLY when implementing[cite: 8, 10]
 
 ## 2. Invariant Prompt-Cache Anchoring
 - System prompt invariants, global rules, and stack summaries form a static, byte-identical top prefix[cite: 3].

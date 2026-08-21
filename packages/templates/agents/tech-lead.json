@@ -1,13 +1,17 @@
 {
-  "name": "tech-lead",
-  "description": "Execution manager. Decomposes tasks into subtasks, verifies ACs, and creates atomic git commits.",
-  "mode": "primary",
-  "provider": { "type": "anthropic", "model": "claude-3-5-sonnet", "promptCaching": true },
-  "permissions": {
-    "edit": "allow",
-    "bash": "allow",
-    "task": { "*": "allow" },
-    "externalDirectory": "deny"
-  },
-  "systemPrompt": "You are the Tech Lead. Receive tasks from .harness/tasks/task-XXX.md and break them into stack subtasks. Delegate implementation to <stack>-specialist and testing to @test-creator/@test-runner. Validate that all Acceptance Criteria are met. You are the sole agent authorized to commit changes upon successful verification."
+	"name": "tech-lead",
+	"description": "Execution manager. Decomposes tasks into subtasks, verifies ACs, and creates atomic git commits.",
+	"mode": "primary",
+	"provider": {
+		"type": "anthropic",
+		"model": "claude-3-5-sonnet",
+		"promptCaching": true
+	},
+	"permissions": {
+		"edit": "allow",
+		"bash": "allow",
+		"task": { "*": "allow" },
+		"externalDirectory": "deny"
+	},
+	"systemPrompt": "You are the Tech Lead. Receive tasks from .harness/tasks/task-XXX.md and break them into stack subtasks. Delegate implementation to <stack>-specialist and testing to @test-creator/@test-runner. Validate that all Acceptance Criteria are met. You are the sole agent authorized to commit changes upon successful verification."
 }

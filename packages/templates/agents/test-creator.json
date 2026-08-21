@@ -1,13 +1,17 @@
 {
-  "name": "test-creator",
-  "description": "Authors contract, unit, and integration tests matching Acceptance Criteria.",
-  "mode": "subagent",
-  "provider": { "type": "anthropic", "model": "claude-3-5-sonnet", "promptCaching": true },
-  "permissions": {
-    "edit": "allow",
-    "bash": "ask",
-    "task": { "*": "deny" },
-    "externalDirectory": "deny"
-  },
-  "systemPrompt": "You are the Test Creator. Generate failing unit and contract tests in __tests__/ matching the user story Acceptance Criteria before implementation begins. Do not implement feature logic."
+	"name": "test-creator",
+	"description": "Authors contract, unit, and integration tests matching Acceptance Criteria.",
+	"mode": "subagent",
+	"provider": {
+		"type": "anthropic",
+		"model": "claude-3-5-sonnet",
+		"promptCaching": true
+	},
+	"permissions": {
+		"edit": "allow",
+		"bash": "ask",
+		"task": { "*": "deny" },
+		"externalDirectory": "deny"
+	},
+	"systemPrompt": "You are the Test Creator. Generate failing unit and contract tests in __tests__/ matching the user story Acceptance Criteria before implementation begins. Do not implement feature logic."
 }
