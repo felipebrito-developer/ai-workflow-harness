@@ -672,7 +672,10 @@ export async function runInit(): Promise<void> {
 		);
 	}
 
-	// 12. Transpile Adapters
+	// 12. Auto-Install Target Dependencies (@modelcontextprotocol/sdk)
+	await ensureDependencies(cwd, validatedConfig.packageManager);
+
+	// 13. Transpile Adapters
 	const compiledFiles = await AdapterCompiler.compileAll(validatedConfig, cwd);
 
 	console.log(chalk.green("\n✨ AI Harness initialized successfully!"));
@@ -686,4 +689,42 @@ export async function runInit(): Promise<void> {
 			"\nNext: Launch your AI tool or run `harness start <task-id>`.\n",
 		),
 	);
+}
+
+async function ensureDependencies(
+	cwd: string,
+	packageManager: string,
+): Promise<void> {
+	const pkgPath = path.join(cwd, "package.json");
+	try {
+		const pkgRaw = await fs.readFile(pkgPath, "utf-8");
+		const pkg = JSON.parse(pkgRaw);
+		const deps = {
+			...(pkg.dependencies || {}),
+			...(pkg.devDependencies || {}),
+		};
+
+		if (!deps["@modelcontextprotocol/sdk"]) {
+			console.log(
+				chalk.cyan(
+					"\n📦 Auto-installing @modelcontextprotocol/sdk dependency...",
+				),
+			);
+			const pm = packageManager || "bun";
+			let cmd: string[];
+			if (pm === "bun") {
+				cmd = ["bun", "add", "@modelcontextprotocol/sdk"];
+			} else if (pm === "pnpm") {
+				cmd = ["pnpm", "add", "-D", "@modelcontextprotocol/sdk"];
+			} else if (pm === "yarn") {
+				cmd = ["yarn", "add", "-D", "@modelcontextprotocol/sdk"];
+			} else {
+				cmd = ["npm", "install", "--save-dev", "@modelcontextprotocol/sdk"];
+			}
+
+			const proc = Bun.spawn(cmd, { cwd, stdout: "ignore", stderr: "ignore" });
+			await proc.exited;
+			console.log(chalk.green("✔ Installed @modelcontextprotocol/sdk successfully."));
+		}
+	} catch {}
 }
