@@ -173,6 +173,10 @@ export class OpenCodeSerializer {
 			mcpMap["ai-memory"] = {
 				type: "local",
 				command: cmdParts,
+				environment: {
+					CLAUDE_CODE_SESSION_ID:
+						process.env.CLAUDE_CODE_SESSION_ID || "harness-session",
+				},
 			};
 		}
 

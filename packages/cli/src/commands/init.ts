@@ -455,7 +455,10 @@ export async function runInit(): Promise<void> {
 					name: "ai-memory",
 					type: "local",
 					command: ["ai-memory", "mcp-bridge"],
-					env: {},
+					env: {
+						CLAUDE_CODE_SESSION_ID:
+							process.env.CLAUDE_CODE_SESSION_ID || "harness-session",
+					},
 				},
 				null,
 				2,

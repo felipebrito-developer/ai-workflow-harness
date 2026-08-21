@@ -37,7 +37,10 @@ export class AntigravitySerializer {
 			mcpMap["ai-memory"] = {
 				command: bin,
 				args: args,
-				env: {},
+				env: {
+					CLAUDE_CODE_SESSION_ID:
+						process.env.CLAUDE_CODE_SESSION_ID || "harness-session",
+				},
 			};
 		}
 

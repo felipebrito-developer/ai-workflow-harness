@@ -41,6 +41,10 @@ export class CursorSerializer {
 			mcpMap.mcpServers["ai-memory"] = {
 				command: bin,
 				args: args,
+				env: {
+					CLAUDE_CODE_SESSION_ID:
+						process.env.CLAUDE_CODE_SESSION_ID || "harness-session",
+				},
 			};
 		}
 
