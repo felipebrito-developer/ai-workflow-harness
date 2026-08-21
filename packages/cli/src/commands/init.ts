@@ -417,7 +417,7 @@ export async function runInit(): Promise<void> {
 		"utf-8",
 	);
 
-	// 4b. Scaffold spec-query MCP Server Script (.harness/mcp/spec-query.ts)
+	// 4b. Scaffold spec-query MCP Server Script (.harness/mcp/spec-query.ts) & roles.json
 	await fs.writeFile(
 		path.join(harnessDir, "mcp", "spec-query.ts"),
 		TemplateScaffolder.getSpecQueryMcpServer(),
@@ -436,6 +436,34 @@ export async function runInit(): Promise<void> {
 			null,
 			2,
 		),
+		"utf-8",
+	);
+
+	await fs.writeFile(
+		path.join(harnessDir, "mcp", "roles.json"),
+		TemplateScaffolder.getRolesJson(),
+		"utf-8",
+	);
+
+	// 4c. Scaffold Permanent Tooling Scripts (.harness/scripts/)
+	const scriptsDir = path.join(harnessDir, "scripts");
+	await fs.mkdir(scriptsDir, { recursive: true });
+
+	await fs.writeFile(
+		path.join(scriptsDir, "checkpoint-db.ts"),
+		TemplateScaffolder.getCheckpointDbScript(),
+		"utf-8",
+	);
+
+	await fs.writeFile(
+		path.join(scriptsDir, "seed-features.ts"),
+		TemplateScaffolder.getSeedFeaturesScript(),
+		"utf-8",
+	);
+
+	await fs.writeFile(
+		path.join(scriptsDir, "migrate-specs-to-db.ts"),
+		TemplateScaffolder.getMigrateSpecsScript(),
 		"utf-8",
 	);
 

@@ -444,6 +444,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 	// ---- G. Pipeline Standards ----
 	describe("G. Pipeline Standards", () => {
 		const phases = [
+			"summary.md",
 			"phase-1-discovery.md",
 			"phase-2-strategy.md",
 			"phase-3-design.md",
@@ -451,7 +452,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			"phase-5-slicing.md",
 		];
 
-		it("should create all 5 phase standard files", async () => {
+		it("should create all 6 pipeline standard files including summary index", async () => {
 			for (const phase of phases) {
 				const stat = await fs.stat(
 					path.join(harnessDir, "standards/pipeline", phase),
