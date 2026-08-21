@@ -101,6 +101,7 @@ export class AgentMapper {
 					"skill-caveman.md",
 					"skill-context-caching.md",
 					"skill-harness.md",
+					"skill-db-first-specs.md",
 				],
 			},
 			"architect-agent": {
@@ -125,6 +126,7 @@ export class AgentMapper {
 					"skill-caveman.md",
 					"skill-context-caching.md",
 					"skill-wayfinder-harness.md",
+					"skill-db-first-specs.md",
 					...(answers.taskBackendType === "linear"
 						? ["skill-linear-cli.md"]
 						: []),
@@ -152,6 +154,7 @@ export class AgentMapper {
 					"skill-caveman.md",
 					"skill-context-caching.md",
 					"skill-wayfinder-harness.md",
+					"skill-db-first-specs.md",
 					...(answers.taskBackendType === "linear"
 						? ["skill-linear-cli.md"]
 						: []),

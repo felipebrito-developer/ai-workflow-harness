@@ -88,6 +88,24 @@ export class TemplateScaffolder {
 				"- Update issue status: `linear issue update <issue-id> --state \"In Progress\"` (or \"Done\")",
 				"- Comment on issue: `linear issue comment <issue-id> --body \"<message>\"` — use for status updates on task close.",
 			].join("\n"),
+
+			"skill-db-first-specs.md": [
+				"# Skill: DB-First Specification Management (ADR-01)",
+				"",
+				"## Objective",
+				"Operate the SQLite `.harness/harness.db` spec engine using the native `spec-query` MCP tool to query, insert, and update application specifications.",
+				"",
+				"## 1. Reading Specs via MCP (`spec-query`)",
+				"- **List All Features:** Call `list_features()` to get all registered system features and their status.",
+				"- **Get Feature Overview:** Call `get_feature_overview({ featureSlug: \"auth\" })` to inspect summary and topic categories.",
+				"- **Get Specific Category Spec:** Call `get_spec({ featureSlug: \"auth\", category: \"business\", level: \"detail\" })` (categories: `business`, `ui`, `technical`, `pipeline`).",
+				"- **Search Across Specs:** Call `search_specs({ query: \"jwt token authentication\" })` to perform full-text search across all spec chunks.",
+				"",
+				"## 2. DB Authoring & Inverted Context Window Protocol",
+				"- Store all feature specs in SQLite `harness.db` (`features`, `spec_topics`, and `spec_chunks` tables).",
+				"- Do NOT load raw markdown files into the prompt context. Query specs on-demand using `spec-query` MCP tool.",
+				"- Un-gitignore `!harness.db` so database changes are committed directly to Git alongside source code diffs.",
+			].join("\n"),
 		};
 	}
 

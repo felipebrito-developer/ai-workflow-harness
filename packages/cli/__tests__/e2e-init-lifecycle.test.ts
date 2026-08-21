@@ -417,6 +417,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			"core/skill-context-caching.md",
 			"core/skill-wayfinder-harness.md",
 			"core/skill-linear-cli.md",
+			"core/skill-db-first-specs.md",
 			"stack/skill-tailwind-shadcn.md",
 			"stack/skill-tanstack-query.md",
 			"stack/skill-expo-router.md",
@@ -429,7 +430,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			"testing/skill-zero-noise-reporter.md",
 		];
 
-		it("should install all 15 skill files starting with '# Skill:'", async () => {
+		it("should install all 16 skill files starting with '# Skill:'", async () => {
 			for (const skill of expectedSkills) {
 				const content = await fs.readFile(
 					path.join(harnessDir, "skills", skill),
