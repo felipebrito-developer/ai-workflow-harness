@@ -112,7 +112,11 @@ export async function runInit(): Promise<void> {
 			type: "input",
 			name: "projectName",
 			message: "Project Name:",
-			initial: path.basename(cwd),
+			initial: brownfieldResult?.projectName || path.basename(cwd),
+			skip() {
+				// Skip asking if project name was already confirmed during brownfield auto-scan
+				return !!brownfieldResult?.projectName;
+			},
 		},
 		{
 			type: "confirm",
@@ -361,6 +365,23 @@ export async function runInit(): Promise<void> {
 		try {
 			await fs.writeFile(gitkeep, "", { flag: "wx" });
 		} catch {}
+	}
+
+	if (answers.useAiMemory) {
+		await fs.writeFile(
+			path.join(harnessDir, "mcp", "ai-memory.json"),
+			JSON.stringify(
+				{
+					name: "ai-memory",
+					type: "local",
+					command: ["npx", "-y", "ai-memory", "mcp"],
+					env: {},
+				},
+				null,
+				2,
+			),
+			"utf-8",
+		);
 	}
 
 	// 4. Write Root .gitignore

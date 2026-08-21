@@ -41,6 +41,7 @@ export class AntigravitySerializer {
 		}
 
 		const directives = [
+			"On session startup or new feature: If no discovery map exists at .harness/memory/discovery/, trigger Phase 1 (Problem Discovery). Have @architect-agent conduct structured Q&A (3+2 choice rule) before generating code.",
 			"Enforce 5-phase planning pipeline before generating implementation code.",
 			"Read .harness/spec/app-summary.md for architectural context.",
 			"Adhere to task-XXX.md file boundary restrictions strictly.",
