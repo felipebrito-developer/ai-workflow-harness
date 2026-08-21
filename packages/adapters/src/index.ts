@@ -56,10 +56,17 @@ export class AdapterCompiler {
 		try {
 			const files = await fs.readdir(mcpDir);
 			for (const file of files) {
-				if (file.endsWith(".json")) {
+				if (file.endsWith(".json") && file !== "roles.json") {
 					const raw = await fs.readFile(path.join(mcpDir, file), "utf-8");
 					const parsed = JSON.parse(raw);
-					mcpServers.push(McpServerSchema.parse(parsed));
+					if (
+						parsed &&
+						typeof parsed === "object" &&
+						"name" in parsed &&
+						"type" in parsed
+					) {
+						mcpServers.push(McpServerSchema.parse(parsed));
+					}
 				}
 			}
 		} catch (err: any) {
