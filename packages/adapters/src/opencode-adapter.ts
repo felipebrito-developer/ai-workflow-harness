@@ -113,31 +113,31 @@ export class OpenCodeSerializer {
 		const providers: Record<string, unknown> = {};
 		if (config.provider.type === "openrouter") {
 			providers.openrouter = {
-				baseURL: config.provider.baseUrl || "https://openrouter.ai/api/v1",
-				...(config.provider.promptCaching
-					? { options: { promptCaching: true } }
-					: {}),
+				options: {
+					baseURL: config.provider.baseUrl || "https://openrouter.ai/api/v1",
+					...(config.provider.promptCaching ? { setCacheKey: true } : {}),
+				},
 			};
 		} else if (config.provider.baseUrl || config.provider.promptCaching) {
 			providers[config.provider.type] = {
-				...(config.provider.baseUrl
-					? { baseURL: config.provider.baseUrl }
-					: {}),
-				...(config.provider.promptCaching
-					? { options: { promptCaching: true } }
-					: {}),
+				options: {
+					...(config.provider.baseUrl
+						? { baseURL: config.provider.baseUrl }
+						: {}),
+					...(config.provider.promptCaching ? { setCacheKey: true } : {}),
+				},
 			};
 		}
 
 		for (const agent of customAgents) {
 			if (agent.provider && !providers[agent.provider.type]) {
 				providers[agent.provider.type] = {
-					...(agent.provider.baseUrl
-						? { baseURL: agent.provider.baseUrl }
-						: {}),
-					...(agent.provider.promptCaching
-						? { options: { promptCaching: true } }
-						: {}),
+					options: {
+						...(agent.provider.baseUrl
+							? { baseURL: agent.provider.baseUrl }
+							: {}),
+						...(agent.provider.promptCaching ? { setCacheKey: true } : {}),
+					},
 				};
 			}
 		}
@@ -153,7 +153,7 @@ export class OpenCodeSerializer {
 			mcpMap.linear = {
 				type: "local",
 				command: ["npx", "-y", "@modelcontextprotocol/server-linear"],
-				env: {
+				environment: {
 					LINEAR_API_KEY: "{env:LINEAR_API_KEY}",
 				},
 			};
@@ -180,7 +180,7 @@ export class OpenCodeSerializer {
 				mcpMap[server.name] = {
 					type: "local",
 					command: server.command,
-					...(Object.keys(server.env).length > 0 ? { env: server.env } : {}),
+					...(Object.keys(server.env).length > 0 ? { environment: server.env } : {}),
 				};
 			}
 		}
