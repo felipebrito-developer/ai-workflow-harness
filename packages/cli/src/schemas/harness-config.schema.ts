@@ -34,8 +34,8 @@ export const HarnessConfigSchema = z.object({
 		.optional(),
 	circuitBreakerLimit: z.number().int().positive().max(5).default(3),
 	pipelineMode: z
-		.enum(["agile-fasttrack", "hotfix"])
-		.default("agile-fasttrack"),
+		.enum(["xp-strict", "agile-fasttrack", "hotfix"])
+		.default("xp-strict"),
 	vibeSettings: z
 		.object({
 			autoExpandBoundaries: z.boolean().default(true),

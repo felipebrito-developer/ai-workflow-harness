@@ -15,7 +15,7 @@ describe("Core Zod Schemas Validation Suite", () => {
 			commands: { test: "bun test", lint: "bun run lint" },
 		});
 		expect(config.version).toBe("1.0.0");
-		expect(config.pipelineMode).toBe("agile-fasttrack");
+		expect(config.pipelineMode).toBe("xp-strict");
 		expect(config.vibeSettings.autoExpandBoundaries).toBe(true);
 	});
 

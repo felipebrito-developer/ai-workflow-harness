@@ -262,6 +262,16 @@ export class SpecDatabase {
 		});
 	}
 
+	public purgeOrphans(): void {
+		this.db.exec(
+			"DELETE FROM spec_topics WHERE id NOT IN (SELECT DISTINCT topic_id FROM spec_chunks);",
+		);
+		this.db.exec(
+			"DELETE FROM features WHERE id NOT IN (SELECT DISTINCT feature_id FROM spec_topics);",
+		);
+		this.db.exec("PRAGMA wal_checkpoint(TRUNCATE);");
+	}
+
 	public close(): void {
 		this.db.close();
 	}

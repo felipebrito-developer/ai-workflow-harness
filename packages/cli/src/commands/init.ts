@@ -42,7 +42,7 @@ export interface InitAnswers {
 	customDefaultModel?: string;
 	taskBackendType: "local" | "linear";
 	useAiMemory: boolean;
-	pipelineMode: "agile-fasttrack" | "full-waterfall" | "hotfix";
+	pipelineMode: "xp-strict" | "agile-fasttrack" | "hotfix";
 	packageManager?: "bun" | "pnpm" | "yarn" | "npm" | "cargo" | "go";
 	cmdTest: string;
 	cmdLint: string;
@@ -266,9 +266,13 @@ export async function runInit(): Promise<void> {
 			message: "Select Default Planning Pipeline Strategy:",
 			choices: [
 				{
-					name: "agile-fasttrack",
+					name: "xp-strict",
 					message:
-						"Agile Fast-Track (2-Pass: Scope/UI -> Tech/Tasks) [Recommended]",
+						"5-Phase XP Pipeline (Wayfinder Grilling, 3+2 Rule, Architecture Review) [Recommended]",
+				},
+				{
+					name: "agile-fasttrack",
+					message: "Agile Fast-Track (2-Pass Scope/UI -> Tech/Tasks)",
 				},
 				{
 					name: "hotfix",
