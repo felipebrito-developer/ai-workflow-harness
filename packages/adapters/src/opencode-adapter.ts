@@ -149,16 +149,6 @@ export class OpenCodeSerializer {
 		// MCP Servers mapping
 		const mcpMap: Record<string, unknown> = {};
 
-		if (config.taskBackend.type === "linear") {
-			mcpMap.linear = {
-				type: "local",
-				command: ["npx", "-y", "@modelcontextprotocol/server-linear"],
-				environment: {
-					LINEAR_API_KEY: "{env:LINEAR_API_KEY}",
-				},
-			};
-		}
-
 		if (config.memoryBackend?.type === "ai-memory") {
 			const cmdParts =
 				config.memoryBackend.command && config.memoryBackend.command.length > 0

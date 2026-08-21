@@ -12,16 +12,6 @@ export class AntigravitySerializer {
 	): SerializedFile[] {
 		const mcpMap: Record<string, unknown> = {};
 
-		if (config.taskBackend.type === "linear") {
-			mcpMap.linear = {
-				command: "npx",
-				args: ["-y", "@modelcontextprotocol/server-linear"],
-				env: {
-					LINEAR_API_KEY: "${LINEAR_API_KEY}",
-				},
-			};
-		}
-
 		if (config.memoryBackend?.type === "ai-memory") {
 			const cmdParts =
 				config.memoryBackend.command && config.memoryBackend.command.length > 0

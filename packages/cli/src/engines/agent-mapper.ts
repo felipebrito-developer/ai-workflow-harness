@@ -125,6 +125,9 @@ export class AgentMapper {
 					"skill-caveman.md",
 					"skill-context-caching.md",
 					"skill-wayfinder-harness.md",
+					...(answers.taskBackendType === "linear"
+						? ["skill-linear-cli.md"]
+						: []),
 				],
 			},
 			"po-agent": {
@@ -149,6 +152,9 @@ export class AgentMapper {
 					"skill-caveman.md",
 					"skill-context-caching.md",
 					"skill-wayfinder-harness.md",
+					...(answers.taskBackendType === "linear"
+						? ["skill-linear-cli.md"]
+						: []),
 				],
 			},
 			"designer-lead": {
