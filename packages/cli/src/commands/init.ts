@@ -447,6 +447,23 @@ export async function runInit(): Promise<void> {
 		"utf-8",
 	);
 
+	if (answers.useAiMemory) {
+		await fs.writeFile(
+			path.join(harnessDir, "mcp", "ai-memory.json"),
+			JSON.stringify(
+				{
+					name: "ai-memory",
+					type: "local",
+					command: ["ai-memory", "mcp-bridge"],
+					env: {},
+				},
+				null,
+				2,
+			),
+			"utf-8",
+		);
+	}
+
 	// 4c. Scaffold Permanent Tooling Scripts (.harness/scripts/)
 	const scriptsDir = path.join(harnessDir, "scripts");
 	await fs.mkdir(scriptsDir, { recursive: true });
