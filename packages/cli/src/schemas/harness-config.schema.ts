@@ -23,7 +23,7 @@ export const HarnessConfigSchema = z.object({
 	memoryBackend: z
 		.object({
 			type: z.enum(["local-logs", "ai-memory"]).default("local-logs"),
-			command: z.array(z.string()).default(["ai-memory", "mcp"]),
+			command: z.array(z.string()).default(["ai-memory", "mcp-bridge"]),
 			aiMemoryConfig: z
 				.object({
 					wikiPath: z.string().default(".harness/wiki"),

@@ -32,7 +32,7 @@ export class AntigravitySerializer {
 			const cmdParts =
 				config.memoryBackend.command && config.memoryBackend.command.length > 0
 					? config.memoryBackend.command
-					: ["ai-memory", "mcp"];
+					: ["ai-memory", "mcp-bridge"];
 			const [bin, ...args] = cmdParts;
 			mcpMap["ai-memory"] = {
 				command: bin,

@@ -36,7 +36,7 @@ export class CursorSerializer {
 			const cmdParts =
 				config.memoryBackend.command && config.memoryBackend.command.length > 0
 					? config.memoryBackend.command
-					: ["ai-memory", "mcp"];
+					: ["ai-memory", "mcp-bridge"];
 			const [bin, ...args] = cmdParts;
 			mcpMap.mcpServers["ai-memory"] = {
 				command: bin,
