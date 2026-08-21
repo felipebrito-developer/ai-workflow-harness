@@ -16,6 +16,12 @@ export class CursorSerializer {
 			mcpServers: {},
 		};
 
+		// Always register native spec-query MCP server for database spec lookup
+		mcpMap.mcpServers["spec-query"] = {
+			command: "bun",
+			args: [".harness/mcp/spec-query.ts"],
+		};
+
 		if (config.memoryBackend?.type === "ai-memory") {
 			const cmdParts =
 				config.memoryBackend.command && config.memoryBackend.command.length > 0

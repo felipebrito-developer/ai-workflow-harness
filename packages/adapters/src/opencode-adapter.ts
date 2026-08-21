@@ -150,6 +150,12 @@ export class OpenCodeSerializer {
 		// MCP Servers mapping
 		const mcpMap: Record<string, unknown> = {};
 
+		// Always register native spec-query MCP server for database spec lookup
+		mcpMap["spec-query"] = {
+			type: "local",
+			command: ["bun", ".harness/mcp/spec-query.ts"],
+		};
+
 		if (config.memoryBackend?.type === "ai-memory") {
 			const cmdParts =
 				config.memoryBackend.command && config.memoryBackend.command.length > 0

@@ -507,7 +507,9 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 				"https://openrouter.ai/api/v1",
 			);
 
-			// ai-memory MCP
+			// MCP servers
+			expect(json.mcp).toHaveProperty("spec-query");
+			expect(json.mcp["spec-query"].command).toEqual(["bun", ".harness/mcp/spec-query.ts"]);
 			expect(json.mcp).toHaveProperty("ai-memory");
 			expect(json.mcp["ai-memory"].command).toEqual(["ai-memory", "mcp"]);
 		});

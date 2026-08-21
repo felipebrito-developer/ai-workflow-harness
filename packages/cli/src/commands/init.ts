@@ -408,12 +408,34 @@ export async function runInit(): Promise<void> {
 			"memory/spawn-log/*",
 			"!memory/spawn-log/.gitkeep",
 			"",
-			"# SQLite Local Database (WAL mode)",
-			"harness.db",
+			"# SQLite Local Database (Database is versioned source of truth; WAL temp files ignored)",
+			"!harness.db",
 			"harness.db-wal",
 			"harness.db-shm",
 			"",
 		].join("\n"),
+		"utf-8",
+	);
+
+	// 4b. Scaffold spec-query MCP Server Script (.harness/mcp/spec-query.ts)
+	await fs.writeFile(
+		path.join(harnessDir, "mcp", "spec-query.ts"),
+		TemplateScaffolder.getSpecQueryMcpServer(),
+		"utf-8",
+	);
+
+	await fs.writeFile(
+		path.join(harnessDir, "mcp", "spec-query.json"),
+		JSON.stringify(
+			{
+				name: "spec-query",
+				type: "local",
+				command: ["bun", ".harness/mcp/spec-query.ts"],
+				env: {},
+			},
+			null,
+			2,
+		),
 		"utf-8",
 	);
 
