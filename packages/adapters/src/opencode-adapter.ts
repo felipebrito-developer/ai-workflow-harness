@@ -149,11 +149,20 @@ export class OpenCodeSerializer {
 
 		// MCP Servers mapping
 		const mcpMap: Record<string, unknown> = {};
+		const pm = config.packageManager || "bun";
+		const specQueryCmd =
+			pm === "bun"
+				? ["bun", ".harness/mcp/spec-query.ts"]
+				: pm === "pnpm"
+					? ["pnpm", "exec", "tsx", ".harness/mcp/spec-query.ts"]
+					: pm === "yarn"
+						? ["yarn", "dlx", "tsx", ".harness/mcp/spec-query.ts"]
+						: ["npx", "-y", "tsx", ".harness/mcp/spec-query.ts"];
 
 		// Always register native spec-query MCP server for database spec lookup
 		mcpMap["spec-query"] = {
 			type: "local",
-			command: ["bun", ".harness/mcp/spec-query.ts"],
+			command: specQueryCmd,
 		};
 
 		if (config.memoryBackend?.type === "ai-memory") {
@@ -275,6 +284,7 @@ export class OpenCodeSerializer {
 			`# Project: ${config.projectName}`,
 			"",
 			`> **Stack:** ${stackList}`,
+			`> **Package Manager:** ${config.packageManager}`,
 			`> **Workflow Mode:** ${config.workflowMode}`,
 			`> **Task Backend:** ${config.taskBackend.type}`,
 			"",
@@ -283,17 +293,17 @@ export class OpenCodeSerializer {
 			"   - On first launch or new feature, if no discovery map exists at `.harness/memory/discovery/`, immediately trigger Phase 1 (Problem Discovery).",
 			"   - Have @architect-agent grill the user via structured Q&A (3+2 choice rule: 3 choices + Write-in + Explain) to chart goals and generate the discovery map before writing code.",
 			"",
-			"2. **Context Loading (2-Level Cache):**",
-			"   - Always read `.harness/spec/app-summary.md` first.",
-			"   - Drill down to `.harness/spec/features/<feature>/README.md` only when working on that feature.",
-			"   - Load sub-specs (`business/`, `ui/`, `technical/`) only when actively implementing.",
+			"2. **Context Loading (DB-First MCP Access):**",
+			"   - Call `list_features` using the `spec-query` MCP server to inspect all system features and status from SQLite `harness.db`.",
+			"   - Call `get_spec` or `search_specs` via `spec-query` MCP tool on demand when implementing a specific feature.",
+			"   - Do NOT load raw markdown files into prompt context.",
 			"",
 			"3. **Task Execution Boundary:**",
 			"   - Read the active task manifest at `.harness/tasks/task-XXX.md`.",
 			"   - You must ONLY modify files listed under `## 1. Allowed File Boundaries` in the task manifest.",
 			"   - Preflight verification and exit-0 tests are mandatory before marking any task as done.",
 			"",
-			"3. **Deterministic Commands:**",
+			"4. **Deterministic Commands:**",
 			`   - Test: \`${config.commands.test}\``,
 			`   - Lint: \`${config.commands.lint}\``,
 			...(config.commands.typecheck

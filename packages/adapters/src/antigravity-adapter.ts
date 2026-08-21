@@ -12,10 +12,20 @@ export class AntigravitySerializer {
 	): SerializedFile[] {
 		const mcpMap: Record<string, unknown> = {};
 
+		const pm = config.packageManager || "bun";
+		const [sqBin, ...sqArgs] =
+			pm === "bun"
+				? ["bun", ".harness/mcp/spec-query.ts"]
+				: pm === "pnpm"
+					? ["pnpm", "exec", "tsx", ".harness/mcp/spec-query.ts"]
+					: pm === "yarn"
+						? ["yarn", "dlx", "tsx", ".harness/mcp/spec-query.ts"]
+						: ["npx", "-y", "tsx", ".harness/mcp/spec-query.ts"];
+
 		// Always register native spec-query MCP server for database spec lookup
 		mcpMap["spec-query"] = {
-			command: "bun",
-			args: [".harness/mcp/spec-query.ts"],
+			command: sqBin,
+			args: sqArgs,
 		};
 
 		if (config.memoryBackend?.type === "ai-memory") {
@@ -49,7 +59,7 @@ export class AntigravitySerializer {
 		const directives = [
 			"On session startup or new feature: If no discovery map exists at .harness/memory/discovery/, trigger Phase 1 (Problem Discovery). Have @architect-agent conduct structured Q&A (3+2 choice rule) before generating code.",
 			"Enforce 5-phase planning pipeline before generating implementation code.",
-			"Read .harness/spec/app-summary.md for architectural context.",
+			"Call list_features (spec-query MCP) to inspect system architecture and feature specs dynamically from SQLite harness.db.",
 			"Adhere to task-XXX.md file boundary restrictions strictly.",
 			`Primary stack: ${Array.isArray(config.stack) ? config.stack.join(", ") : config.stack}`,
 		];

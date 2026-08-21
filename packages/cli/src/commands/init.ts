@@ -43,6 +43,7 @@ export interface InitAnswers {
 	taskBackendType: "local" | "linear";
 	useAiMemory: boolean;
 	pipelineMode: "agile-fasttrack" | "full-waterfall" | "hotfix";
+	packageManager?: "bun" | "pnpm" | "yarn" | "npm" | "cargo" | "go";
 	cmdTest: string;
 	cmdLint: string;
 }
@@ -327,6 +328,7 @@ export async function runInit(): Promise<void> {
 		},
 		...(answers.useAiMemory ? { memoryBackend: { type: "ai-memory" } } : {}),
 		pipelineMode: answers.pipelineMode,
+		packageManager: answers.packageManager || brownfieldResult?.packageManager || "bun",
 		circuitBreakerLimit: 3,
 		commands: {
 			test: answers.cmdTest,

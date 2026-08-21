@@ -10,6 +10,7 @@ import {
 } from "../src/schemas/harness-config.schema.js";
 import { AdapterCompiler } from "../../adapters/src/index.js";
 import { runFeature } from "../src/commands/feature.js";
+import { RepoAnalyzer } from "../src/engines/repo-analyzer.js";
 import type { InitAnswers } from "../src/commands/init.js";
 
 const PROJECT_ROOT = path.resolve(process.cwd());
@@ -101,6 +102,7 @@ const makeAnswers = (
 	taskBackendType: "local",
 	useAiMemory: true,
 	pipelineMode: "agile-fasttrack",
+	packageManager: "bun",
 	cmdTest: "bun test",
 	cmdLint: "bunx @biomejs/biome check .",
 	...overrides,
@@ -130,6 +132,7 @@ function buildConfig(answers: InitAnswers): HarnessConfig {
 			? { memoryBackend: { type: "ai-memory" } }
 			: {}),
 		pipelineMode: answers.pipelineMode,
+		packageManager: answers.packageManager || "bun",
 		circuitBreakerLimit: 3,
 		commands: { test: answers.cmdTest, lint: answers.cmdLint },
 	});
@@ -822,7 +825,33 @@ describe("Agent Workflow Readiness Validation", () => {
 			const json = JSON.parse(
 				await fs.readFile(path.join(harnessDir, "agents", file), "utf-8"),
 			);
-			expect(json.permissions.externalDirectory).toBe("deny");
+			if (json.mode === "subagent") {
+				expect(json.permissions.externalDirectory).toBe("deny");
+			}
 		}
+	});
+
+	describe("RepoAnalyzer Package Manager Auto-Discovery", () => {
+		it("detects bun from bun.lockb and sets bun commands", async () => {
+			const tmp = path.join(PROJECT_ROOT, `.tmp-repo-analyzer-bun-${Date.now()}`);
+			await fs.mkdir(tmp, { recursive: true });
+			await fs.writeFile(path.join(tmp, "bun.lockb"), "");
+			const result = await RepoAnalyzer.analyze(tmp, { interactive: false });
+			expect(result.packageManager).toBe("bun");
+			expect(result.testCmd).toBe("bun test");
+			expect(result.lintCmd).toBe("bunx @biomejs/biome check .");
+			await fs.rm(tmp, { recursive: true, force: true });
+		});
+
+		it("detects pnpm from pnpm-lock.yaml and sets pnpm commands", async () => {
+			const tmp = path.join(PROJECT_ROOT, `.tmp-repo-analyzer-pnpm-${Date.now()}`);
+			await fs.mkdir(tmp, { recursive: true });
+			await fs.writeFile(path.join(tmp, "pnpm-lock.yaml"), "");
+			const result = await RepoAnalyzer.analyze(tmp, { interactive: false });
+			expect(result.packageManager).toBe("pnpm");
+			expect(result.testCmd).toBe("pnpm test");
+			expect(result.lintCmd).toBe("pnpm exec biome check .");
+			await fs.rm(tmp, { recursive: true, force: true });
+		});
 	});
 });

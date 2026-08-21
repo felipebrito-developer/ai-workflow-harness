@@ -4,6 +4,9 @@ export const HarnessConfigSchema = z.object({
 	version: z.string().default("1.0.0"),
 	projectName: z.string().min(1),
 	stack: z.array(z.string()).min(1),
+	packageManager: z
+		.enum(["bun", "pnpm", "yarn", "npm", "cargo", "go"])
+		.default("bun"),
 	adapters: z.array(z.enum(["opencode", "antigravity", "cursor"])).min(1),
 	workflowMode: z
 		.enum(["solo-agent", "orchestrated", "vibe-assist"])

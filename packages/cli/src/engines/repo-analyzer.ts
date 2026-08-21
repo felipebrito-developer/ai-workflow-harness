@@ -7,22 +7,79 @@ import { SpecDatabase } from "./spec-database.js";
 export interface RepoAnalysisResult {
 	projectName: string;
 	stack: string[];
+	packageManager: "bun" | "pnpm" | "yarn" | "npm" | "cargo" | "go";
 	testCmd: string;
 	lintCmd: string;
 	detectedModules: string[];
 }
 
 export class RepoAnalyzer {
-	public static async analyze(cwd: string): Promise<RepoAnalysisResult> {
+	public static async analyze(
+		cwd: string,
+		options: { interactive?: boolean } = { interactive: true },
+	): Promise<RepoAnalysisResult> {
 		console.log(
 			chalk.bold.cyan("\n🔍 Analyzing Brownfield Repository Structure...\n"),
 		);
 
 		const stack: string[] = [];
 		let projectName = path.basename(cwd);
-		let testCmd = "bun test";
-		let lintCmd = "bunx @biomejs/biome check .";
+		let packageManager: "bun" | "pnpm" | "yarn" | "npm" | "cargo" | "go" = "npm";
 		const detectedModules: string[] = [];
+
+		// Lockfile package manager detection
+		try {
+			await fs.access(path.join(cwd, "bun.lockb"));
+			packageManager = "bun";
+		} catch {
+			try {
+				await fs.access(path.join(cwd, "bun.lock"));
+				packageManager = "bun";
+			} catch {
+				try {
+					await fs.access(path.join(cwd, "pnpm-lock.yaml"));
+					packageManager = "pnpm";
+				} catch {
+					try {
+						await fs.access(path.join(cwd, "yarn.lock"));
+						packageManager = "yarn";
+					} catch {
+						try {
+							await fs.access(path.join(cwd, "package-lock.json"));
+							packageManager = "npm";
+						} catch {
+							try {
+								await fs.access(path.join(cwd, "Cargo.toml"));
+								packageManager = "cargo";
+							} catch {
+								try {
+									await fs.access(path.join(cwd, "go.mod"));
+									packageManager = "go";
+								} catch {}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		let testCmd = {
+			bun: "bun test",
+			pnpm: "pnpm test",
+			yarn: "yarn test",
+			npm: "npm test",
+			cargo: "cargo test",
+			go: "go test ./...",
+		}[packageManager];
+
+		let lintCmd = {
+			bun: "bunx @biomejs/biome check .",
+			pnpm: "pnpm exec biome check .",
+			yarn: "yarn dlx @biomejs/biome check .",
+			npm: "npx @biomejs/biome check .",
+			cargo: "cargo clippy",
+			go: "golangci-lint run",
+		}[packageManager];
 
 		// Inspect package.json
 		try {
@@ -43,8 +100,8 @@ export class RepoAnalyzer {
 				stack.push("db-sql");
 			if (deps.mongodb || deps.mongoose) stack.push("db-nosql");
 
-			if (pkg.scripts?.test) testCmd = "npm test";
-			if (pkg.scripts?.lint) lintCmd = "npm run lint";
+			if (pkg.scripts?.test) testCmd = `${packageManager === "bun" ? "bun test" : packageManager === "pnpm" ? "pnpm test" : packageManager === "yarn" ? "yarn test" : "npm test"}`;
+			if (pkg.scripts?.lint) lintCmd = `${packageManager === "bun" ? "bun run lint" : packageManager === "pnpm" ? "pnpm run lint" : packageManager === "yarn" ? "yarn lint" : "npm run lint"}`;
 		} catch {}
 
 		// Inspect go.mod
@@ -74,6 +131,7 @@ export class RepoAnalyzer {
 		}
 
 		console.log(chalk.green(`✔ Detected Project Name: ${projectName}`));
+		console.log(chalk.green(`✔ Detected Package Manager: ${packageManager}`));
 		console.log(chalk.green(`✔ Detected Stack: ${stack.join(", ")}`));
 		console.log(
 			chalk.green(
@@ -81,35 +139,43 @@ export class RepoAnalyzer {
 			),
 		);
 
-		// Interactive 3-Question Verification Card (Eliminates Misconceptions)
-		console.log(
-			chalk.bold.yellow("\n📋 Confirm Discovered Architecture Baseline:"),
-		);
+		let answers = {
+			confirmName: projectName,
+			confirmModules: detectedModules.slice(0, 5).join(", ") || "core, api",
+			confirmTestCmd: testCmd,
+		};
 
-		const answers = await enquirer.prompt<{
-			confirmName: string;
-			confirmModules: string;
-			confirmTestCmd: string;
-		}>([
-			{
-				type: "input",
-				name: "confirmName",
-				message: "Project Name & Purpose:",
-				initial: projectName,
-			},
-			{
-				type: "input",
-				name: "confirmModules",
-				message: "Core Module Scope (comma separated):",
-				initial: detectedModules.slice(0, 5).join(", ") || "core, api",
-			},
-			{
-				type: "input",
-				name: "confirmTestCmd",
-				message: "Verification Test Command:",
-				initial: testCmd,
-			},
-		]);
+		if (options.interactive) {
+			// Interactive 3-Question Verification Card
+			console.log(
+				chalk.bold.yellow("\n📋 Confirm Discovered Architecture Baseline:"),
+			);
+
+			answers = await enquirer.prompt<{
+				confirmName: string;
+				confirmModules: string;
+				confirmTestCmd: string;
+			}>([
+				{
+					type: "input",
+					name: "confirmName",
+					message: "Project Name & Purpose:",
+					initial: projectName,
+				},
+				{
+					type: "input",
+					name: "confirmModules",
+					message: "Core Module Scope (comma separated):",
+					initial: detectedModules.slice(0, 5).join(", ") || "core, api",
+				},
+				{
+					type: "input",
+					name: "confirmTestCmd",
+					message: "Verification Test Command:",
+					initial: testCmd,
+				},
+			]);
+		}
 
 		const finalModules = answers.confirmModules
 			.split(",")
@@ -145,6 +211,7 @@ export class RepoAnalyzer {
 		return {
 			projectName: answers.confirmName,
 			stack,
+			packageManager,
 			testCmd: answers.confirmTestCmd,
 			lintCmd,
 			detectedModules: finalModules,

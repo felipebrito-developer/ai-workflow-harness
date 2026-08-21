@@ -16,10 +16,20 @@ export class CursorSerializer {
 			mcpServers: {},
 		};
 
+		const pm = config.packageManager || "bun";
+		const [sqBin, ...sqArgs] =
+			pm === "bun"
+				? ["bun", ".harness/mcp/spec-query.ts"]
+				: pm === "pnpm"
+					? ["pnpm", "exec", "tsx", ".harness/mcp/spec-query.ts"]
+					: pm === "yarn"
+						? ["yarn", "dlx", "tsx", ".harness/mcp/spec-query.ts"]
+						: ["npx", "-y", "tsx", ".harness/mcp/spec-query.ts"];
+
 		// Always register native spec-query MCP server for database spec lookup
 		mcpMap.mcpServers["spec-query"] = {
-			command: "bun",
-			args: [".harness/mcp/spec-query.ts"],
+			command: sqBin,
+			args: sqArgs,
 		};
 
 		if (config.memoryBackend?.type === "ai-memory") {
