@@ -298,7 +298,9 @@ export async function runInit(): Promise<void> {
 		} catch {
 			console.warn(
 				chalk.yellow(
-					"\n⚠️ ai-memory binary not found. Memory features will be configured but require 'npm install -g ai-memory' to activate MCP integration.",
+					"\n⚠️ ai-memory binary not found on PATH.\n" +
+						"  Install binary: curl -fsSL https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-x86_64.tar.gz | tar -xz -C ~/.local/bin/\n" +
+						"  Start daemon:  nohup ~/.local/bin/ai-memory --data-dir ~/.local/share/ai-memory > ~/.local/share/ai-memory/server.log 2>&1 &\n",
 				),
 			);
 		}

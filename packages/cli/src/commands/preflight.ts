@@ -36,6 +36,39 @@ export async function runPreflight(taskId: string): Promise<void> {
 		console.log(chalk.green("✔ Working tree clean and secret-free."));
 	}
 
+	// 2. Memory Backend Daemon Check
+	try {
+		const { ConfigManager } = await import("../engines/config-manager.js");
+		const config = await ConfigManager.load();
+		if (config?.memoryBackend?.type === "ai-memory") {
+			try {
+				const res = await fetch("http://127.0.0.1:49374/admin/status", {
+					signal: AbortSignal.timeout(1000),
+				});
+				if (res.ok) {
+					console.log(
+						chalk.green(
+							"✔ Memory Backend (ai-memory) daemon online (127.0.0.1:49374).",
+						),
+					);
+				} else {
+					console.log(
+						chalk.yellow(
+							"⚠️ Memory Backend daemon (ai-memory) returned non-200 status.",
+						),
+					);
+				}
+			} catch {
+				console.log(
+					chalk.yellow(
+						"⚠️ Memory Backend (ai-memory) daemon not reachable at http://127.0.0.1:49374.\n" +
+							"   Start daemon: nohup ~/.local/bin/ai-memory --data-dir ~/.local/share/ai-memory > ~/.local/share/ai-memory/server.log 2>&1 &",
+					),
+				);
+			}
+		}
+	} catch {}
+
 	// 2. Boundary AST Validation
 	console.log("- Validating AST for target boundaries...");
 	const astValidator = new AstValidator();
