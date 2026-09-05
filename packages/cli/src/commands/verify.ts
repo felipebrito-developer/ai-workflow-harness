@@ -7,6 +7,7 @@ import { CircuitBreaker } from "../engines/circuit-breaker.js";
 import { ConfigManager } from "../engines/config-manager.js";
 import { ErrorSanitizer } from "../engines/error-sanitizer.js";
 import { GitManager } from "../engines/git-manager.js";
+import { SpecDatabase } from "../engines/spec-database.js";
 import { parseTaskManifest } from "../parsers/task-parser.js";
 import type { HarnessConfig } from "../schemas/harness-config.schema.js";
 
@@ -46,7 +47,27 @@ export async function runVerify(taskId: string): Promise<void> {
 		manifest.allowedFiles,
 	);
 	if (!boundaryCheck.valid) {
-		if (cfg?.workflowMode === "vibe-assist") {
+		const isVibeMode = cfg?.workflowMode === "vibe-assist";
+		const autoExpand = cfg?.vibeSettings?.autoExpandBoundaries ?? true;
+
+		if (isVibeMode && autoExpand) {
+			const updatedFiles = Array.from(
+				new Set([...manifest.allowedFiles, ...boundaryCheck.violatingFiles]),
+			);
+
+			if (updatedFiles.length > 5) {
+				console.log(
+					chalk.bold.yellow(
+						`\n⚠️ Max 5 File Ceiling Exceeded! Task has expanded to ${updatedFiles.length} files.`,
+					),
+				);
+				console.log(
+					chalk.yellow(
+						"  Consider re-slicing this task into smaller atomic tasks with @po-agent.\n",
+					),
+				);
+			}
+
 			console.log(
 				chalk.yellow(
 					"⚠️ Vibe-Assist Mode: Auto-expanding allowed files boundary to include:",
@@ -55,16 +76,25 @@ export async function runVerify(taskId: string): Promise<void> {
 			console.log(
 				chalk.dim(`  + ${boundaryCheck.violatingFiles.join("\n  + ")}`),
 			);
-			manifest.allowedFiles.push(...boundaryCheck.violatingFiles);
+			manifest.allowedFiles = updatedFiles;
 
-			// Persist the updated boundaries back to the task manifest
+			// 1. Persist the updated boundaries back to the task manifest (frontmatter + body)
 			try {
 				const raw = await fs.readFile(taskFilePath, "utf-8");
 				const parsed = matter(raw);
 				parsed.data.allowedFiles = manifest.allowedFiles;
+
+				// Update ## 1. Allowed File Boundaries section in content
+				let newContent = parsed.content;
+				const boundariesRegex = /## 1\. Allowed File Boundaries\n[\s\S]*?(?=\n## |$)/;
+				const newBoundariesSection = `## 1. Allowed File Boundaries\n${manifest.allowedFiles.map((f) => `- \`${f}\``).join("\n")}`;
+				if (boundariesRegex.test(newContent)) {
+					newContent = newContent.replace(boundariesRegex, newBoundariesSection);
+				}
+
 				await fs.writeFile(
 					taskFilePath,
-					matter.stringify(parsed.content, parsed.data),
+					matter.stringify(newContent, parsed.data),
 					"utf-8",
 				);
 				console.log(
@@ -75,6 +105,43 @@ export async function runVerify(taskId: string): Promise<void> {
 					chalk.red(`Failed to persist boundaries: ${writeErr.message}`),
 				);
 			}
+
+			// 2. Sync updated boundaries with SQLite harness.db
+			try {
+				const specDb = new SpecDatabase(path.join(process.cwd(), ".harness"));
+				specDb.upsertTask({
+					id: manifest.frontmatter.id,
+					spec_id: manifest.frontmatter.feature_ref || "feat-general",
+					status: manifest.frontmatter.status || "IN_PROGRESS",
+					allowed_files: JSON.stringify(manifest.allowedFiles),
+					acceptance_criteria: JSON.stringify(manifest.acceptanceCriteria || []),
+				});
+				specDb.close();
+				console.log(chalk.dim("- Synced updated file boundaries to SQLite harness.db"));
+			} catch (dbErr: any) {
+				console.error(
+					chalk.dim(`Note: Could not sync boundaries to harness.db: ${dbErr.message}`),
+				);
+			}
+
+			// 3. Log expansion receipt to .harness/memory/attempts/boundary-expansions.json
+			try {
+				const attemptsDir = path.join(process.cwd(), ".harness", "memory", "attempts");
+				await fs.mkdir(attemptsDir, { recursive: true });
+				const receiptPath = path.join(attemptsDir, "boundary-expansions.json");
+				let receipts: any[] = [];
+				try {
+					const existing = await fs.readFile(receiptPath, "utf-8");
+					receipts = JSON.parse(existing);
+				} catch {}
+				receipts.push({
+					taskId: manifest.frontmatter.id,
+					timestamp: new Date().toISOString(),
+					violatingFiles: boundaryCheck.violatingFiles,
+					totalAllowedFiles: manifest.allowedFiles.length,
+				});
+				await fs.writeFile(receiptPath, JSON.stringify(receipts, null, 2), "utf-8");
+			} catch {}
 		} else {
 			console.error(chalk.red("✖ File Boundary Violation Detected!"));
 			console.error(

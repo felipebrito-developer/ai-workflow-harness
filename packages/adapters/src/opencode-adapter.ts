@@ -284,6 +284,39 @@ export class OpenCodeSerializer {
 			? config.stack.join(", ")
 			: config.stack;
 
+		const isVibeMode = config.workflowMode === "vibe-assist";
+
+		const discipline = isVibeMode
+			? [
+					"1. **Session Startup Routine (Interactive Pairing):**",
+					"   - Select primary agent personas (@architect-agent, @po-agent, stack specialists) directly in chat.",
+					"   - On startup, agents auto-read `.harness/memory/workday-log/today.md` and query `spec-query` MCP for pending tasks.",
+					"",
+					"2. **Context Loading (DB-First MCP Access):**",
+					"   - Call `list_features` using `spec-query` MCP server to inspect SQLite `harness.db`.",
+					"   - Call `get_spec` or `search_specs` via `spec-query` MCP tool on demand.",
+					"",
+					"3. **Task Execution & Boundary Expansion:**",
+					"   - Read task manifest at `.harness/tasks/task-XXX.md`.",
+					"   - File boundaries auto-expand up to Max 5 files per task during interactive pairing.",
+					"   - Run `harness verify` when implementation passes local tests.",
+				]
+			: [
+					"1. **Session Startup Routine (Phase 1 Problem Discovery):**",
+					"   - On first launch or new feature, if no discovery map exists at `.harness/memory/discovery/`, immediately trigger Phase 1 (Problem Discovery).",
+					"   - Have @architect-agent grill the user via structured Q&A (3+2 choice rule: 3 choices + Write-in + Explain) to chart goals and generate the discovery map before writing code.",
+					"",
+					"2. **Context Loading (DB-First MCP Access):**",
+					"   - Call `list_features` using the `spec-query` MCP server to inspect all system features and status from SQLite `harness.db`.",
+					"   - Call `get_spec` or `search_specs` via `spec-query` MCP tool on demand when implementing a specific feature.",
+					"   - Do NOT load raw markdown files into prompt context.",
+					"",
+					"3. **Task Execution Boundary:**",
+					"   - Read the active task manifest at `.harness/tasks/task-XXX.md`.",
+					"   - You must ONLY modify files listed under `## 1. Allowed File Boundaries` in the task manifest.",
+					"   - Preflight verification and exit-0 tests are mandatory before marking any task as done.",
+				];
+
 		return [
 			`# Project: ${config.projectName}`,
 			"",
@@ -293,19 +326,7 @@ export class OpenCodeSerializer {
 			`> **Task Backend:** ${config.taskBackend.type}`,
 			"",
 			"## Operational Discipline",
-			"1. **Session Startup Routine (Phase 1 Problem Discovery):**",
-			"   - On first launch or new feature, if no discovery map exists at `.harness/memory/discovery/`, immediately trigger Phase 1 (Problem Discovery).",
-			"   - Have @architect-agent grill the user via structured Q&A (3+2 choice rule: 3 choices + Write-in + Explain) to chart goals and generate the discovery map before writing code.",
-			"",
-			"2. **Context Loading (DB-First MCP Access):**",
-			"   - Call `list_features` using the `spec-query` MCP server to inspect all system features and status from SQLite `harness.db`.",
-			"   - Call `get_spec` or `search_specs` via `spec-query` MCP tool on demand when implementing a specific feature.",
-			"   - Do NOT load raw markdown files into prompt context.",
-			"",
-			"3. **Task Execution Boundary:**",
-			"   - Read the active task manifest at `.harness/tasks/task-XXX.md`.",
-			"   - You must ONLY modify files listed under `## 1. Allowed File Boundaries` in the task manifest.",
-			"   - Preflight verification and exit-0 tests are mandatory before marking any task as done.",
+			...discipline,
 			"",
 			"4. **Deterministic Commands:**",
 			`   - Test: \`${config.commands.test}\``,

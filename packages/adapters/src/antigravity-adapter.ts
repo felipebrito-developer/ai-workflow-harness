@@ -59,13 +59,22 @@ export class AntigravitySerializer {
 			}
 		}
 
-		const directives = [
-			"On session startup or new feature: If no discovery map exists at .harness/memory/discovery/, trigger Phase 1 (Problem Discovery). Have @architect-agent conduct structured Q&A (3+2 choice rule) before generating code.",
-			"Enforce 5-phase planning pipeline before generating implementation code.",
-			"Call list_features (spec-query MCP) to inspect system architecture and feature specs dynamically from SQLite harness.db.",
-			"Adhere to task-XXX.md file boundary restrictions strictly.",
-			`Primary stack: ${Array.isArray(config.stack) ? config.stack.join(", ") : config.stack}`,
-		];
+		const isVibeMode = config.workflowMode === "vibe-assist";
+		const directives = isVibeMode
+			? [
+					"Vibe-Assist Mode Active: Interactive human-AI pairing flow. Select primary agents (@architect-agent, @po-agent, stack specialists) directly in chat.",
+					"On session startup: Agents auto-read .harness/memory/workday-log/today.md and query spec-query MCP to load pending tasks.",
+					"Call list_features (spec-query MCP) to inspect system architecture and feature specs dynamically from SQLite harness.db.",
+					"File boundaries auto-expand up to Max 5 files per task during pairing. Run harness verify when implementation completes.",
+					`Primary stack: ${Array.isArray(config.stack) ? config.stack.join(", ") : config.stack}`,
+				]
+			: [
+					"On session startup or new feature: If no discovery map exists at .harness/memory/discovery/, trigger Phase 1 (Problem Discovery). Have @architect-agent conduct structured Q&A (3+2 choice rule) before generating code.",
+					"Enforce 5-phase planning pipeline before generating implementation code.",
+					"Call list_features (spec-query MCP) to inspect system architecture and feature specs dynamically from SQLite harness.db.",
+					"Adhere to task-XXX.md file boundary restrictions strictly.",
+					`Primary stack: ${Array.isArray(config.stack) ? config.stack.join(", ") : config.stack}`,
+				];
 		if (config.memoryBackend?.type === "ai-memory") {
 			directives.push(
 				"Query ai-memory for cross-agent project context and wiki retrieval on task startup.",

@@ -251,6 +251,29 @@ export class TemplateScaffolder {
 				"└────────────────────────────────────────────────────────┘",
 				"```",
 			].join("\n"),
+
+			"skill-test-driven-verification.md": [
+				"# Skill: Test-Driven Verification & Code Review Engine",
+				"",
+				"## Objective & Foundation",
+				"Code review in AI Workflow Harness is 100% test-driven. Code correctness is proven deterministically through unit and integration test execution.",
+				"",
+				"## 1. Atomic RED -> GREEN -> REFACTOR Cycle for AI Agents",
+				"1. **RED Phase (Test Creation):** Author test contracts in `__tests__/<module>.test.ts` BEFORE implementation code.",
+				"2. **GREEN Phase (Implementation):** Implement source code strictly to satisfy failing test assertions.",
+				"3. **REFACTOR Phase:** Clean up code while maintaining GREEN state.",
+				"",
+				"## 2. 3-Tier Assertion Depth Pattern",
+				"- **Tier 1 (Happy Path):** Exact object structure & value equality. (No `toBeTruthy()` or `toBeDefined()` alone).",
+				"- **Tier 2 (Sad Path FIRST):** Error rejection testing using `toThrow('exact error message')` or status code assertions.",
+				"- **Tier 3 (Boundary Invariants):** Null, undefined, empty collection, and schema limits.",
+				"",
+				"## 3. Acceptance Criteria Traceability Gate",
+				"Every AC in `task-XXX.md` MUST map 1-to-1 to a named `describe/it` test block.",
+				"",
+				"## 4. Zero-Tautology & Assertion Quality Guard",
+				"Forbidden: `expect(true).toBe(true)`, empty mocks, or tests without concrete assertions.",
+			].join("\n"),
 		};
 	}
 
@@ -364,6 +387,27 @@ export class TemplateScaffolder {
 				"## 3. Deliverables",
 				"- Author atomic task manifests in `.harness/tasks/task-XXX.md`.",
 				"- Set initial status to `TODO`.",
+			].join("\n"),
+
+			"vibe-assist-workflow.md": [
+				"# Vibe-Assist Mode: Interactive Pairing Workflow Standard",
+				"",
+				"## 1. Objective",
+				"Provide a streamlined 3-step chat workflow for interactive human-AI pairing while maintaining memory context and safety bounds.",
+				"",
+				"## 2. 3-Step Chat Lifecycle",
+				"1. **Phase 1 (@architect-agent chat):**",
+				"   - Conduct Wayfinder discovery grilling (3+2 choice rule).",
+				"   - Mandatory Disk Flush: Store Q&A decisions in `.harness/memory/discovery/` and SQLite `harness.db` before closing session.",
+				"2. **Phase 2 (@po-agent chat):**",
+				"   - Read discovery memory on startup.",
+				"   - Slice specifications into task manifests (`.harness/tasks/task-XXX.md`).",
+				"   - Log active task queue in `.harness/memory/workday-log/today.md`.",
+				"3. **Phase 3 (Direct @specialist chat):**",
+				"   - Load stack specialist persona directly in chat.",
+				"   - Auto-read active task queue and write code test-first (RED -> GREEN -> REFACTOR).",
+				"   - File boundaries auto-expand up to Max 5 files per task.",
+				"   - Run `harness verify` when implementation completes.",
 			].join("\n"),
 		};
 	}

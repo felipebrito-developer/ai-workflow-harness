@@ -83,6 +83,13 @@ export async function runFeature(
 
 	const taskPath = path.join(tasksDir, `${taskId}.md`);
 
+	let cfg: any = null;
+	try {
+		cfg = await ConfigManager.load();
+	} catch {}
+	const pipelineMode = cfg?.pipelineMode || "agile-fasttrack";
+	const workflowMode = cfg?.workflowMode || "orchestrated";
+
 	const taskContent = matter.stringify(
 		[
 			`# Task: ${featureName}`,
@@ -103,7 +110,8 @@ export async function runFeature(
 			id: taskId,
 			title: featureName,
 			status: "TODO",
-			workflowMode: "agile-fasttrack",
+			pipelineMode,
+			workflowMode,
 			riskLevel: risk.level,
 			feature_ref: featId,
 		},
@@ -113,7 +121,6 @@ export async function runFeature(
 
 	// Write to discovery log in ai-memory if enabled
 	try {
-		const cfg = await ConfigManager.load();
 		if (cfg?.memoryBackend?.type === "ai-memory") {
 			const wikiDir = path.join(cwd, ".harness", "wiki");
 			await fs.mkdir(wikiDir, { recursive: true });
