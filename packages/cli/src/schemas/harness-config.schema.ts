@@ -7,45 +7,15 @@ export const HarnessConfigSchema = z.object({
 	packageManager: z
 		.enum(["bun", "pnpm", "yarn", "npm", "cargo", "go"])
 		.default("bun"),
-	adapters: z.array(z.enum(["opencode", "antigravity", "cursor"])).min(1),
-	workflowMode: z
-		.enum(["solo-agent", "orchestrated", "vibe-assist"])
-		.default("orchestrated"),
+	adapters: z.array(z.enum(["opencode", "antigravity"])).min(1),
 	provider: z.object({
-		type: z.enum(["anthropic", "openrouter", "openai", "custom"]),
 		model: z.string().min(1),
 		promptCaching: z.boolean().default(true),
-		baseUrl: z.string().optional(),
 	}),
-	taskBackend: z.object({
-		type: z.enum(["local", "linear"]).default("local"),
-	}),
-	memoryBackend: z
-		.object({
-			type: z.enum(["local-logs", "ai-memory"]).default("local-logs"),
-			command: z.array(z.string()).default(["ai-memory", "mcp-bridge"]),
-			aiMemoryConfig: z
-				.object({
-					wikiPath: z.string().default(".harness/wiki"),
-					autoSync: z.boolean().default(true),
-				})
-				.optional(),
-		})
-		.optional(),
 	circuitBreakerLimit: z.number().int().positive().max(5).default(3),
-	pipelineMode: z
-		.enum(["xp-strict", "agile-fasttrack", "hotfix"])
-		.default("xp-strict"),
-	vibeSettings: z
-		.object({
-			autoExpandBoundaries: z.boolean().default(true),
-			retroIndexSpecs: z.boolean().default(true),
-		})
-		.default({ autoExpandBoundaries: true, retroIndexSpecs: true }),
 	commands: z.object({
 		test: z.string().min(1),
 		lint: z.string().min(1),
-		typecheck: z.string().optional(),
 	}),
 });
 

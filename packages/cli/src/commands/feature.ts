@@ -119,20 +119,6 @@ export async function runFeature(
 
 	await fs.writeFile(taskPath, taskContent, "utf-8");
 
-	// Write to discovery log in ai-memory if enabled
-	try {
-		if (cfg?.memoryBackend?.type === "ai-memory") {
-			const wikiDir = path.join(cwd, ".harness", "wiki");
-			await fs.mkdir(wikiDir, { recursive: true });
-			const discoveryLog = `## Feature: ${featureName}\n- Risk: ${risk.level}\n- Files: ${targetFiles.join(", ")}\n- Created: ${new Date().toISOString()}\n\n`;
-			await fs.appendFile(
-				path.join(wikiDir, "features.md"),
-				discoveryLog,
-				"utf-8",
-			);
-		}
-	} catch {}
-
 	console.log(
 		chalk.bold.green(
 			`\n✔ Feature ${featureName} initialized and atomic task generated:`,

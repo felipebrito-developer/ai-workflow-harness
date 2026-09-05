@@ -20,7 +20,6 @@ const PROJECT_ROOT = path.resolve(process.cwd());
 // ---------------------------------------------------------------------------
 async function scaffoldDirs(
 	harnessDir: string,
-	useAiMemory: boolean,
 ): Promise<void> {
 	const dirs = [
 		"spec/features",
@@ -39,8 +38,8 @@ async function scaffoldDirs(
 		"memory/workday-log",
 		"memory/spawn-log",
 		"memory/attempts",
+		"wiki",
 	];
-	if (useAiMemory) dirs.push("wiki");
 
 	for (const dir of dirs) {
 		await fs.mkdir(path.join(harnessDir, dir), { recursive: true });
@@ -96,12 +95,8 @@ const makeAnswers = (
 	createSpecialistTemplates: true,
 	installRecommendedSkills: true,
 	adapters: ["opencode", "antigravity"],
-	workflowMode: "orchestrated",
 	providerType: "openrouter",
 	modelPreset: "complex-efficient",
-	taskBackendType: "local",
-	useAiMemory: true,
-	pipelineMode: "agile-fasttrack",
 	packageManager: "bun",
 	cmdTest: "bun test",
 	cmdLint: "bunx @biomejs/biome check .",
@@ -121,17 +116,10 @@ function buildConfig(answers: InitAnswers): HarnessConfig {
 		projectName: answers.projectName,
 		stack: answers.stack,
 		adapters: answers.adapters,
-		workflowMode: answers.workflowMode,
 		provider: {
-			type: answers.providerType,
 			model: primaryModel,
 			promptCaching: answers.enableTokenOptimizations,
 		},
-		taskBackend: { type: answers.taskBackendType },
-		...(answers.useAiMemory
-			? { memoryBackend: { type: "ai-memory" } }
-			: {}),
-		pipelineMode: answers.pipelineMode,
 		packageManager: answers.packageManager || "bun",
 		circuitBreakerLimit: 3,
 		commands: { test: answers.cmdTest, lint: answers.cmdLint },
@@ -151,7 +139,7 @@ async function fullInit(
 	const config = buildConfig(answers);
 
 	// 1. Directories
-	await scaffoldDirs(harnessDir, answers.useAiMemory);
+	await scaffoldDirs(harnessDir);
 
 	// 2. Config file
 	await fs.writeFile(
@@ -477,11 +465,8 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			expect(parsed.projectName).toBe("e2e-test-app");
 			expect(parsed.stack).toEqual(["react-web", "node"]);
 			expect(parsed.adapters).toEqual(["opencode", "antigravity"]);
-			expect(parsed.provider.type).toBe("openrouter");
 			expect(parsed.provider.model).toBe("openrouter/z-ai/glm-5.2");
 			expect(parsed.provider.promptCaching).toBe(true);
-			expect(parsed.memoryBackend?.type).toBe("ai-memory");
-			expect(parsed.pipelineMode).toBe("agile-fasttrack");
 			expect(parsed.circuitBreakerLimit).toBe(3);
 		});
 	});
@@ -502,8 +487,8 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			expect(json.instructions).toContain(".harness/spec/app-summary.md");
 			expect(json.instructions).toContain(".harness/standards/**/*.md");
 			expect(json.instructions).toContain(".harness/skills/**/*.md");
-			expect(json.agent).toHaveProperty("architect");
-			expect(json.agent.architect.mode).toBe("primary");
+			expect(json.agent).toHaveProperty("planner");
+			expect(json.agent.planner.mode).toBe("primary");
 
 			// Provider with setCacheKey
 			expect(json.provider).toHaveProperty("openrouter");
@@ -515,8 +500,6 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			// MCP servers
 			expect(json.mcp).toHaveProperty("spec-query");
 			expect(json.mcp["spec-query"].command).toEqual(["bun", ".harness/mcp/spec-query.ts"]);
-			expect(json.mcp).toHaveProperty("ai-memory");
-			expect(json.mcp["ai-memory"].command).toEqual(["ai-memory", "mcp-bridge"]);
 		});
 
 		it("should generate opencode.md with project info and commands", async () => {
@@ -549,7 +532,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 
 	// ---- J. Adapter Output — Antigravity ----
 	describe("J. Adapter Output — Antigravity", () => {
-		it("should generate valid antigravity.json", async () => {
+		it("should generate valid antigravity.json and AGENTS.md", async () => {
 			const raw = await fs.readFile(
 				path.join(tmpDir, "antigravity.json"),
 				"utf-8",
@@ -560,17 +543,15 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			expect(json.project).toBe("e2e-test-app");
 			expect(Array.isArray(json.directives)).toBe(true);
 			expect(json.directives.length).toBeGreaterThanOrEqual(4);
+			expect(json.mcpServers).toHaveProperty("spec-query");
 
-			// ai-memory MCP
-			expect(json.mcpServers).toHaveProperty("ai-memory");
-			expect(json.mcpServers["ai-memory"].command).toBe("ai-memory");
-			expect(json.mcpServers["ai-memory"].args).toEqual(["mcp-bridge"]);
-
-			// ai-memory directive
-			const hasMemoryDirective = json.directives.some((d: string) =>
-				d.includes("ai-memory"),
+			const agentsMd = await fs.readFile(
+				path.join(tmpDir, "AGENTS.md"),
+				"utf-8",
 			);
-			expect(hasMemoryDirective).toBe(true);
+			expect(agentsMd).toContain("Antigravity Directive");
+			expect(agentsMd).toContain("@planner");
+			expect(agentsMd).toContain("@builder");
 		});
 	});
 
@@ -628,79 +609,10 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			expect(content).toContain("## 3. Verification Commands");
 			expect(content).toContain("```bash");
 		});
-
-		it("should write feature wiki log when ai-memory enabled", async () => {
-			const wikiContent = await fs.readFile(
-				path.join(harnessDir, "wiki/features.md"),
-				"utf-8",
-			);
-			expect(wikiContent).toContain("UserProfile");
-			expect(wikiContent).toContain("src/user-profile.ts");
-		});
 	});
 });
 
-// ============================================================================
-// TEST SUITE 2: Linear Backend + Skill Injection
-// ============================================================================
-describe("E2E Init — Linear Backend + Skill Injection", () => {
-	const tmpDir = path.join(PROJECT_ROOT, `.tmp-e2e-linear-${Date.now()}`);
-	const harnessDir = path.join(tmpDir, ".harness");
-	const answers = makeAnswers({ taskBackendType: "linear" });
 
-	beforeAll(async () => {
-		await fullInit(tmpDir, answers);
-	});
-
-	afterAll(async () => {
-		process.chdir(PROJECT_ROOT);
-		await fs.rm(tmpDir, { recursive: true, force: true });
-	});
-
-	it("should inject skill-linear-cli.md into architect-agent skills", async () => {
-		const json = JSON.parse(
-			await fs.readFile(
-				path.join(harnessDir, "agents/architect-agent.json"),
-				"utf-8",
-			),
-		);
-		expect(json.skills).toContain("skill-linear-cli.md");
-	});
-
-	it("should inject skill-linear-cli.md into po-agent skills", async () => {
-		const json = JSON.parse(
-			await fs.readFile(
-				path.join(harnessDir, "agents/po-agent.json"),
-				"utf-8",
-			),
-		);
-		expect(json.skills).toContain("skill-linear-cli.md");
-	});
-
-	it("should NOT inject skill-linear-cli.md into tech-lead", async () => {
-		const json = JSON.parse(
-			await fs.readFile(
-				path.join(harnessDir, "agents/tech-lead.json"),
-				"utf-8",
-			),
-		);
-		expect(json.skills).not.toContain("skill-linear-cli.md");
-	});
-
-	it("should NOT inject linear MCP server in adapter output", async () => {
-		const antigravity = JSON.parse(
-			await fs.readFile(path.join(tmpDir, "antigravity.json"), "utf-8"),
-		);
-		expect(antigravity.mcpServers).not.toHaveProperty("linear");
-
-		const opencode = JSON.parse(
-			await fs.readFile(path.join(tmpDir, "opencode.json"), "utf-8"),
-		);
-		if (opencode.mcp) {
-			expect(opencode.mcp).not.toHaveProperty("linear");
-		}
-	});
-});
 
 // ============================================================================
 // TEST SUITE 3: Agent Workflow Readiness Validation

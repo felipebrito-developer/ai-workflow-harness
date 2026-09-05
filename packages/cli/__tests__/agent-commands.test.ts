@@ -34,6 +34,7 @@ describe("Custom Agent Schema & Storage Test Suite", () => {
 				externalDirectory: "deny",
 			},
 			systemPrompt: "Perform security audits.",
+			skills: [],
 		};
 
 		const parsed = CustomAgentSchema.parse(sampleAgent);

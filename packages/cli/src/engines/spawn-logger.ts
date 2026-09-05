@@ -196,23 +196,6 @@ export class SpawnLogger {
 
 		await fs.writeFile(filePath, logContent, "utf-8");
 
-		// Append to ai-memory wiki if configured
-		try {
-			const config = await ConfigManager.load();
-			if (config.memoryBackend?.type === "ai-memory") {
-				const wikiDir = path.resolve(
-					process.cwd(),
-					config.memoryBackend.aiMemoryConfig?.wikiPath || ".harness/wiki",
-				);
-				await fs.mkdir(wikiDir, { recursive: true });
-				await fs.appendFile(
-					path.join(wikiDir, "spawn-log.md"),
-					`\n${logContent}\n\n---\n`,
-					"utf-8",
-				);
-			}
-		} catch {}
-
 		return filePath;
 	}
 }

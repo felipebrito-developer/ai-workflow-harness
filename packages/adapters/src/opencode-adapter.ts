@@ -45,46 +45,71 @@ export class OpenCodeSerializer {
 		customAgents: CustomAgent[],
 		mcpServers: McpServer[],
 	): Record<string, unknown> {
-		let modelIdentifier = config.provider.model;
-		if (
-			config.provider.type === "openrouter" &&
-			!modelIdentifier.startsWith("openrouter/")
-		) {
-			modelIdentifier = `openrouter/${modelIdentifier}`;
-		}
-
-		const isOrchestrated = config.workflowMode === "orchestrated";
+		const modelIdentifier = config.provider.model;
 		const stacks = Array.isArray(config.stack) ? config.stack : [config.stack];
 
 		const taskPermissions: Record<string, string> = {
-			"*": "deny",
+			"*": "allow",
 		};
-
-		if (isOrchestrated) {
-			taskPermissions["test-runner"] = "allow";
-			taskPermissions["code-reviewer"] = "allow";
-
-			if (stacks.includes("react-native")) {
-				taskPermissions["react-native-developer"] = "allow";
-			}
-			if (stacks.includes("react-web")) {
-				taskPermissions["web-developer"] = "allow";
-			}
-			if (stacks.includes("go")) {
-				taskPermissions["go-developer"] = "allow";
-			}
-			if (stacks.includes("node")) {
-				taskPermissions["node-developer"] = "allow";
-			}
-			if (stacks.includes("python")) {
-				taskPermissions["python-developer"] = "allow";
-			}
-		}
 
 		// Auto-allow custom subagents on primary architect
 		for (const agent of customAgents) {
 			if (agent.mode === "subagent") {
 				taskPermissions[agent.name] = "allow";
+			}
+		}
+
+		const codingModel = config.provider.model.startsWith("openrouter/")
+			? "openrouter/qwen/qwen-2.5-coder-32b-instruct"
+			: config.provider.model;
+		const reasoningModel = config.provider.model.startsWith("openrouter/")
+			? "openrouter/deepseek/deepseek-r1"
+			: config.provider.model;
+
+		const agentsMap: Record<string, unknown> = {
+			planner: {
+				mode: "primary",
+				model: reasoningModel,
+				description:
+					"Reasoning agent (@planner) for architecture planning, living spec slicing, and task manifest creation.",
+				permission: {
+					task: taskPermissions,
+					external_directory: "deny",
+				},
+			},
+		};
+
+		for (const s of stacks) {
+			if (s === "react-native") {
+				agentsMap["mobile-builder"] = {
+					mode: "subagent",
+					model: codingModel,
+					description:
+						"Mobile builder agent (@mobile-builder) executing React Native implementation tasks.",
+					permission: { edit: "allow", bash: "ask", external_directory: "deny" },
+				};
+			} else if (
+				s === "node" ||
+				s === "go" ||
+				s === "python" ||
+				s === "db-sql" ||
+				s === "db-nosql"
+			) {
+				agentsMap["backend-builder"] = {
+					mode: "subagent",
+					model: codingModel,
+					description:
+						"Backend builder agent (@backend-builder) executing API and domain implementation tasks.",
+					permission: { edit: "allow", bash: "ask", external_directory: "deny" },
+				};
+			} else if (s === "react-web") {
+				agentsMap["web-builder"] = {
+					mode: "subagent",
+					model: codingModel,
+					description:
+						"Web builder agent (@web-builder) executing React web frontend implementation tasks.",
+					permission: { edit: "allow", bash: "ask", external_directory: "deny" },
+				};
 			}
 		}
 
@@ -97,35 +122,23 @@ export class OpenCodeSerializer {
 				".harness/skills/**/*.md",
 				"opencode.md",
 			],
-			agent: {
-				architect: {
-					mode: "primary",
-					description:
-						"Primary architect enforcing Harness 5-phase planning and boundary-locked task execution.",
-					permission: {
-						task: taskPermissions,
-						external_directory: "deny",
-					},
-				},
-			},
+			agent: agentsMap,
 		};
 
 		// Providers mapping
 		const providers: Record<string, unknown> = {};
-		if (config.provider.type === "openrouter") {
+		if (config.provider.model.startsWith("openrouter/")) {
 			providers.openrouter = {
 				options: {
-					baseURL: config.provider.baseUrl || "https://openrouter.ai/api/v1",
+					baseURL: "https://openrouter.ai/api/v1",
 					...(config.provider.promptCaching ? { setCacheKey: true } : {}),
 				},
 			};
-		} else if (config.provider.baseUrl || config.provider.promptCaching) {
-			providers[config.provider.type] = {
+		} else if (config.provider.promptCaching) {
+			const providerName = config.provider.model.split("/")[0] || "default";
+			providers[providerName] = {
 				options: {
-					...(config.provider.baseUrl
-						? { baseURL: config.provider.baseUrl }
-						: {}),
-					...(config.provider.promptCaching ? { setCacheKey: true } : {}),
+					setCacheKey: true,
 				},
 			};
 		}
@@ -164,21 +177,6 @@ export class OpenCodeSerializer {
 			type: "local",
 			command: specQueryCmd,
 		};
-
-		if (config.memoryBackend?.type === "ai-memory") {
-			const cmdParts =
-				config.memoryBackend.command && config.memoryBackend.command.length > 0
-					? config.memoryBackend.command
-					: ["ai-memory", "mcp-bridge"];
-			mcpMap["ai-memory"] = {
-				type: "local",
-				command: cmdParts,
-				environment: {
-					CLAUDE_CODE_SESSION_ID:
-						process.env.CLAUDE_CODE_SESSION_ID || "harness-session",
-				},
-			};
-		}
 
 		for (const server of mcpServers) {
 			if (server.type === "remote" && server.url) {
@@ -284,56 +282,29 @@ export class OpenCodeSerializer {
 			? config.stack.join(", ")
 			: config.stack;
 
-		const isVibeMode = config.workflowMode === "vibe-assist";
-
-		const discipline = isVibeMode
-			? [
-					"1. **Session Startup Routine (Interactive Pairing):**",
-					"   - Select primary agent personas (@architect-agent, @po-agent, stack specialists) directly in chat.",
-					"   - On startup, agents auto-read `.harness/memory/workday-log/today.md` and query `spec-query` MCP for pending tasks.",
-					"",
-					"2. **Context Loading (DB-First MCP Access):**",
-					"   - Call `list_features` using `spec-query` MCP server to inspect SQLite `harness.db`.",
-					"   - Call `get_spec` or `search_specs` via `spec-query` MCP tool on demand.",
-					"",
-					"3. **Task Execution & Boundary Expansion:**",
-					"   - Read task manifest at `.harness/tasks/task-XXX.md`.",
-					"   - File boundaries auto-expand up to Max 5 files per task during interactive pairing.",
-					"   - Run `harness verify` when implementation passes local tests.",
-				]
-			: [
-					"1. **Session Startup Routine (Phase 1 Problem Discovery):**",
-					"   - On first launch or new feature, if no discovery map exists at `.harness/memory/discovery/`, immediately trigger Phase 1 (Problem Discovery).",
-					"   - Have @architect-agent grill the user via structured Q&A (3+2 choice rule: 3 choices + Write-in + Explain) to chart goals and generate the discovery map before writing code.",
-					"",
-					"2. **Context Loading (DB-First MCP Access):**",
-					"   - Call `list_features` using the `spec-query` MCP server to inspect all system features and status from SQLite `harness.db`.",
-					"   - Call `get_spec` or `search_specs` via `spec-query` MCP tool on demand when implementing a specific feature.",
-					"   - Do NOT load raw markdown files into prompt context.",
-					"",
-					"3. **Task Execution Boundary:**",
-					"   - Read the active task manifest at `.harness/tasks/task-XXX.md`.",
-					"   - You must ONLY modify files listed under `## 1. Allowed File Boundaries` in the task manifest.",
-					"   - Preflight verification and exit-0 tests are mandatory before marking any task as done.",
-				];
-
 		return [
 			`# Project: ${config.projectName}`,
 			"",
 			`> **Stack:** ${stackList}`,
 			`> **Package Manager:** ${config.packageManager}`,
-			`> **Workflow Mode:** ${config.workflowMode}`,
-			`> **Task Backend:** ${config.taskBackend.type}`,
 			"",
 			"## Operational Discipline",
-			...discipline,
+			"1. **2-Mode System Architecture (@planner & @builder):**",
+			"   - `@planner` handles architectural slicing, living spec generation, and task manifest updates.",
+			"   - `@builder` executes implementation strictly respecting file boundaries in `task-XXX.md`.",
+			"",
+			"2. **Context Loading (DB-First MCP Access):**",
+			"   - Call `list_features` using `spec-query` MCP server to inspect SQLite `harness.db`.",
+			"   - Read `.harness/spec/app-summary.md` for master application blueprint.",
+			"",
+			"3. **Task Execution Boundary:**",
+			"   - Read active task manifest at `.harness/tasks/task-XXX.md`.",
+			"   - Allowed file boundaries: Max 2 implementation code files + 1 test file (max 3 total).",
+			"   - Run `harness verify <taskId>` to validate before marking task done.",
 			"",
 			"4. **Deterministic Commands:**",
 			`   - Test: \`${config.commands.test}\``,
 			`   - Lint: \`${config.commands.lint}\``,
-			...(config.commands.typecheck
-				? [`   - Typecheck: \`${config.commands.typecheck}\``]
-				: []),
 		].join("\n");
 	}
 }

@@ -36,13 +36,9 @@ export interface InitAnswers {
 	createSpecialistTemplates: boolean;
 	installRecommendedSkills: boolean;
 	adapters: ("opencode" | "antigravity")[];
-	workflowMode: "orchestrated" | "solo-agent" | "vibe-assist";
 	providerType: "openrouter" | "anthropic" | "openai" | "custom";
 	modelPreset: ModelPresetOption;
 	customDefaultModel?: string;
-	taskBackendType: "local" | "linear";
-	useAiMemory: boolean;
-	pipelineMode: "xp-strict" | "agile-fasttrack" | "hotfix";
 	packageManager?: "bun" | "pnpm" | "yarn" | "npm" | "cargo" | "go";
 	cmdTest: string;
 	cmdLint: string;
@@ -175,22 +171,6 @@ export async function runInit(): Promise<void> {
 		},
 		{
 			type: "select",
-			name: "workflowMode",
-			message: "AI Execution Topology:",
-			choices: [
-				{
-					name: "orchestrated",
-					message: "Orchestrated (Workflow Orchestrator + Specialists)",
-				},
-				{
-					name: "solo-agent",
-					message: "Solo-Agent (Single implementation agent)",
-				},
-				{ name: "vibe-assist", message: "Vibe-Assist (Interactive pairing)" },
-			],
-		},
-		{
-			type: "select",
 			name: "providerType",
 			message: "LLM Gateway / Provider:",
 			choices: [
@@ -242,74 +222,9 @@ export async function runInit(): Promise<void> {
 				return this.state.answers.modelPreset !== "custom";
 			},
 		},
-		{
-			type: "select",
-			name: "taskBackendType",
-			message: "Task Management Backend:",
-			choices: [
-				{
-					name: "local",
-					message: "Local-First (.harness/tasks/ markdown manifests)",
-				},
-				{ name: "linear", message: "Linear MCP Integration" },
-			],
-		},
-		{
-			type: "confirm",
-			name: "useAiMemory",
-			message: "Enable long-term cross-agent memory backend (ai-memory)?",
-			initial: false,
-		},
-		{
-			type: "select",
-			name: "pipelineMode",
-			message: "Select Default Planning Pipeline Strategy:",
-			choices: [
-				{
-					name: "xp-strict",
-					message:
-						"5-Phase XP Pipeline (Wayfinder Grilling, 3+2 Rule, Architecture Review) [Recommended]",
-				},
-				{
-					name: "agile-fasttrack",
-					message: "Agile Fast-Track (2-Pass Scope/UI -> Tech/Tasks)",
-				},
-				{
-					name: "hotfix",
-					message: "Hotfix / Spike (1-Pass Direct Task Injection)",
-				},
-			],
-			initial: 0,
-		},
-		{
-			type: "input",
-			name: "cmdTest",
-			message: "Test Command:",
-			initial: "bun test",
-		},
-		{
-			type: "input",
-			name: "cmdLint",
-			message: "Lint Command:",
-			initial: "bunx @biomejs/biome check .",
-		},
 	];
 
 	const answers = await enquirer.prompt<InitAnswers>(questions);
-
-	if (answers.useAiMemory) {
-		try {
-			await execa("ai-memory", ["--version"]);
-		} catch {
-			console.warn(
-				chalk.yellow(
-					"\n⚠️ ai-memory binary not found on PATH.\n" +
-						"  Install binary: curl -fsSL https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-x86_64.tar.gz | tar -xz -C ~/.local/bin/\n" +
-						"  Start daemon:  nohup ~/.local/bin/ai-memory --data-dir ~/.local/share/ai-memory > ~/.local/share/ai-memory/server.log 2>&1 &\n",
-				),
-			);
-		}
-	}
 
 	const primaryModel = AgentMapper.getModelForRole(
 		"workflow-orchestrator",
@@ -320,19 +235,12 @@ export async function runInit(): Promise<void> {
 		version: "1.0.0",
 		projectName: answers.projectName,
 		stack: answers.stack,
+		packageManager: answers.packageManager || brownfieldResult?.packageManager || "bun",
 		adapters: answers.adapters,
-		workflowMode: answers.workflowMode,
 		provider: {
-			type: answers.providerType,
 			model: primaryModel,
 			promptCaching: answers.enableTokenOptimizations,
 		},
-		taskBackend: {
-			type: answers.taskBackendType,
-		},
-		...(answers.useAiMemory ? { memoryBackend: { type: "ai-memory" } } : {}),
-		pipelineMode: answers.pipelineMode,
-		packageManager: answers.packageManager || brownfieldResult?.packageManager || "bun",
 		circuitBreakerLimit: 3,
 		commands: {
 			test: answers.cmdTest,
@@ -363,33 +271,12 @@ export async function runInit(): Promise<void> {
 		path.join(harnessDir, "memory", "attempts"),
 	];
 
-	if (answers.useAiMemory) {
-		dirsToCreate.push(path.join(harnessDir, "wiki"));
-	}
-
 	for (const dir of dirsToCreate) {
 		await fs.mkdir(dir, { recursive: true });
 		const gitkeep = path.join(dir, ".gitkeep");
 		try {
 			await fs.writeFile(gitkeep, "", { flag: "wx" });
 		} catch {}
-	}
-
-	if (answers.useAiMemory) {
-		await fs.writeFile(
-			path.join(harnessDir, "mcp", "ai-memory.json"),
-			JSON.stringify(
-				{
-					name: "ai-memory",
-					type: "local",
-					command: ["ai-memory", "mcp"],
-					env: {},
-				},
-				null,
-				2,
-			),
-			"utf-8",
-		);
 	}
 
 	// 4. Write Root .gitignore
@@ -406,15 +293,11 @@ export async function runInit(): Promise<void> {
 			"memory/attempts/*",
 			"!memory/attempts/.gitkeep",
 			"",
-			"# AI Memory wiki (session logs)",
-			"wiki/*",
-			"!wiki/.gitkeep",
-			"",
 			"# Memory spawn logs (generated)",
 			"memory/spawn-log/*",
 			"!memory/spawn-log/.gitkeep",
 			"",
-			"# SQLite Local Database (Database is versioned source of truth; WAL temp files ignored)",
+			"# SQLite Local Database",
 			"!harness.db",
 			"harness.db-wal",
 			"harness.db-shm",
@@ -450,26 +333,6 @@ export async function runInit(): Promise<void> {
 		TemplateScaffolder.getRolesJson(),
 		"utf-8",
 	);
-
-	if (answers.useAiMemory) {
-		await fs.writeFile(
-			path.join(harnessDir, "mcp", "ai-memory.json"),
-			JSON.stringify(
-				{
-					name: "ai-memory",
-					type: "local",
-					command: ["ai-memory", "mcp-bridge"],
-					env: {
-						CLAUDE_CODE_SESSION_ID:
-							process.env.CLAUDE_CODE_SESSION_ID || "harness-session",
-					},
-				},
-				null,
-				2,
-			),
-			"utf-8",
-		);
-	}
 
 	// 4c. Scaffold Permanent Tooling Scripts (.harness/scripts/)
 	const scriptsDir = path.join(harnessDir, "scripts");
@@ -585,7 +448,6 @@ export async function runInit(): Promise<void> {
 				"",
 				"> **Status:** In Development",
 				`> **Stack:** ${validatedConfig.stack.join(", ")}`,
-				`> **Workflow Mode:** ${validatedConfig.workflowMode}`,
 				"",
 				"## System Overview",
 				"High-level description of system goals, architecture invariants, and user personas.",
@@ -659,8 +521,6 @@ export async function runInit(): Promise<void> {
 				"",
 				"## Decisions So Far",
 				`- Primary Stack: ${validatedConfig.stack.join(", ")}`,
-				`- Task Execution Backend: ${validatedConfig.taskBackend.type}`,
-				`- Memory Backend: ${validatedConfig.memoryBackend?.type || "local-logs"}`,
 				"",
 				"## Fog of War (Pending Phase 1 Discovery)",
 				"- Audit legacy module boundaries and un-tested codepaths.",
@@ -674,28 +534,6 @@ export async function runInit(): Promise<void> {
 			"utf-8",
 		);
 	}
-
-	if (answers.useAiMemory) {
-		await fs.writeFile(
-			path.join(harnessDir, "wiki", "overview.md"),
-			[
-				`# ${validatedConfig.projectName} — AI Memory Wiki Overview`,
-				"",
-				`> Shared long-term cross-agent memory for ${validatedConfig.projectName}`,
-				"",
-				"## Architecture Rules",
-				`- **Stack:** ${validatedConfig.stack.join(", ")}`,
-				`- **Pipeline Mode:** ${validatedConfig.pipelineMode}`,
-				`- **Circuit Breaker Limit:** ${validatedConfig.circuitBreakerLimit} retries`,
-				"",
-				"## Session Logs & Handoffs",
-				"Lifecycle observations, decisions, and cross-agent handoffs are logged here.",
-				"",
-			].join("\n"),
-			"utf-8",
-		);
-	}
-
 	// 12. Auto-Install Target Dependencies (@modelcontextprotocol/sdk)
 	await ensureDependencies(cwd, validatedConfig.packageManager);
 

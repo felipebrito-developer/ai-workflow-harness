@@ -10,13 +10,11 @@ describe("Core Zod Schemas Validation Suite", () => {
 			projectName: "TestApp",
 			stack: ["node"],
 			adapters: ["opencode"],
-			provider: { type: "openrouter", model: "claude-3.5-sonnet" },
-			taskBackend: { type: "local" },
+			provider: { model: "claude-3.5-sonnet" },
 			commands: { test: "bun test", lint: "bun run lint" },
 		});
 		expect(config.version).toBe("1.0.0");
-		expect(config.pipelineMode).toBe("xp-strict");
-		expect(config.vibeSettings.autoExpandBoundaries).toBe(true);
+		expect(config.circuitBreakerLimit).toBe(3);
 	});
 
 	it("should parse valid CustomAgent", () => {

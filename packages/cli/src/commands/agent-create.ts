@@ -169,6 +169,7 @@ export async function runAgentCreate(initialName?: string): Promise<void> {
 		},
 		permissions,
 		systemPrompt: answers.systemPrompt,
+		skills: [],
 	};
 
 	const validatedAgent = CustomAgentSchema.parse(agentPayload);

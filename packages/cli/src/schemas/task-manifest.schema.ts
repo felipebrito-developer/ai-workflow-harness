@@ -19,6 +19,17 @@ export const TaskFrontmatterSchema = z.object({
 	type: TaskTypeSchema.default("task"),
 });
 
+function isTestFile(filePath: string): boolean {
+	const lower = filePath.toLowerCase();
+	return (
+		lower.includes(".test.") ||
+		lower.includes(".spec.") ||
+		lower.endsWith("_test.go") ||
+		lower.includes("/tests/") ||
+		lower.includes("/__tests__/")
+	);
+}
+
 export const TaskManifestSchema = z
 	.object({
 		frontmatter: TaskFrontmatterSchema,
@@ -27,7 +38,9 @@ export const TaskManifestSchema = z
 			.array(z.string())
 			.min(1, "At least one acceptance criterion is required")
 			.max(4, "At most 4 acceptance criteria"),
-		verificationCommands: z.array(z.string()),
+		verificationCommands: z
+			.array(z.string())
+			.min(1, "At least one verification command is required"),
 	})
 	.superRefine((data, ctx) => {
 		const type = data.frontmatter.type || "task";
@@ -40,13 +53,33 @@ export const TaskManifestSchema = z
 					path: ["allowedFiles"],
 				});
 			}
-			if (data.allowedFiles.length > 2) {
+
+			const testFiles = data.allowedFiles.filter(isTestFile);
+			const codeFiles = data.allowedFiles.filter((f) => !isTestFile(f));
+
+			if (codeFiles.length > 2) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
-					message: "At most 2 allowed files for standard tasks",
+					message: "At most 2 implementation code files allowed for standard tasks",
 					path: ["allowedFiles"],
 				});
 			}
+			if (testFiles.length > 1) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "At most 1 test spec file allowed for standard tasks",
+					path: ["allowedFiles"],
+				});
+			}
+			if (data.allowedFiles.length > 3) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message:
+						"Task boundary invariant violated: allowedFiles must contain max 2 code files + 1 test file (max 3 total)",
+					path: ["allowedFiles"],
+				});
+			}
+
 			if (data.verificationCommands.length === 0) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,

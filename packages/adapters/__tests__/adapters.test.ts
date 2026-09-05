@@ -14,27 +14,23 @@ describe("Adapters Serializers", () => {
 		version: "1.0.0",
 		projectName: "TestApp",
 		stack: ["node", "react-web"],
-		adapters: ["opencode", "antigravity", "cursor"],
-		workflowMode: "orchestrated",
+		packageManager: "bun",
+		adapters: ["opencode", "antigravity"],
 		provider: {
-			type: "openrouter",
-			model: "anthropic/claude-3.5-sonnet",
+			model: "openrouter/anthropic/claude-3.5-sonnet",
 			promptCaching: true,
 		},
-		taskBackend: { type: "local" },
-		memoryBackend: { type: "ai-memory" },
-		pipelineMode: "agile-fasttrack",
-		vibeSettings: { autoExpandBoundaries: true, retroIndexSpecs: true },
 		circuitBreakerLimit: 3,
 		commands: { test: "bun test", lint: "bun run lint" },
 	};
 
-	it("should serialize Antigravity config with ai-memory MCP and directives", () => {
+	it("should serialize Antigravity config with directives and AGENTS.md", () => {
 		const files = AntigravitySerializer.serialize(sampleConfig);
-		expect(files.length).toBe(1);
+		expect(files.length).toBe(2);
 		expect(files[0].relativePath).toBe("antigravity.json");
-		expect(files[0].content).toContain("ai-memory");
+		expect(files[1].relativePath).toBe("AGENTS.md");
 		expect(files[0].content).toContain("directives");
+		expect(files[1].content).toContain("Antigravity Directive");
 	});
 
 	it("should serialize OpenCode config with mcp and instructions", () => {
@@ -42,7 +38,6 @@ describe("Adapters Serializers", () => {
 		expect(files.length).toBeGreaterThan(1);
 		const opencodeJson = files.find((f) => f.relativePath === "opencode.json");
 		expect(opencodeJson).toBeDefined();
-		expect(opencodeJson?.content).toContain("ai-memory");
 	});
 
 	it("should serialize Cursor rules", () => {

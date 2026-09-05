@@ -32,11 +32,15 @@ export async function runAgentList(): Promise<void> {
 	const config: HarnessConfig = JSON.parse(rawConfig);
 	const customAgents = await AdapterCompiler.loadCustomAgents(cwd);
 
+	const defaultProvider = config.provider.model.startsWith("openrouter/")
+		? "openrouter"
+		: config.provider.model.split("/")[0] || "default";
+
 	const agents: AgentRow[] = [
 		{
 			name: "architect",
 			mode: "primary",
-			provider: config.provider.type,
+			provider: defaultProvider,
 			model: config.provider.model,
 			caching: config.provider.promptCaching ? "enabled" : "disabled",
 			source: "default",
@@ -44,7 +48,7 @@ export async function runAgentList(): Promise<void> {
 		{
 			name: "test-runner",
 			mode: "subagent",
-			provider: config.provider.type,
+			provider: defaultProvider,
 			model: config.provider.model,
 			caching: config.provider.promptCaching ? "enabled" : "disabled",
 			source: "default",
@@ -52,7 +56,7 @@ export async function runAgentList(): Promise<void> {
 		{
 			name: "code-reviewer",
 			mode: "subagent",
-			provider: config.provider.type,
+			provider: defaultProvider,
 			model: config.provider.model,
 			caching: config.provider.promptCaching ? "enabled" : "disabled",
 			source: "default",

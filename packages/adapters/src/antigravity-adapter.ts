@@ -28,22 +28,6 @@ export class AntigravitySerializer {
 			args: sqArgs,
 		};
 
-		if (config.memoryBackend?.type === "ai-memory") {
-			const cmdParts =
-				config.memoryBackend.command && config.memoryBackend.command.length > 0
-					? config.memoryBackend.command
-					: ["ai-memory", "mcp-bridge"];
-			const [bin, ...args] = cmdParts;
-			mcpMap["ai-memory"] = {
-				command: bin,
-				args: args,
-				env: {
-					CLAUDE_CODE_SESSION_ID:
-						process.env.CLAUDE_CODE_SESSION_ID || "harness-session",
-				},
-			};
-		}
-
 		for (const server of mcpServers) {
 			if (server.type === "local" && server.command.length > 0) {
 				const [bin, ...args] = server.command;
@@ -59,28 +43,17 @@ export class AntigravitySerializer {
 			}
 		}
 
-		const isVibeMode = config.workflowMode === "vibe-assist";
-		const directives = isVibeMode
-			? [
-					"Vibe-Assist Mode Active: Interactive human-AI pairing flow. Select primary agents (@architect-agent, @po-agent, stack specialists) directly in chat.",
-					"On session startup: Agents auto-read .harness/memory/workday-log/today.md and query spec-query MCP to load pending tasks.",
-					"Call list_features (spec-query MCP) to inspect system architecture and feature specs dynamically from SQLite harness.db.",
-					"File boundaries auto-expand up to Max 5 files per task during pairing. Run harness verify when implementation completes.",
-					`Primary stack: ${Array.isArray(config.stack) ? config.stack.join(", ") : config.stack}`,
-				]
-			: [
-					"On session startup or new feature: If no discovery map exists at .harness/memory/discovery/, trigger Phase 1 (Problem Discovery). Have @architect-agent conduct structured Q&A (3+2 choice rule) before generating code.",
-					"Enforce 5-phase planning pipeline before generating implementation code.",
-					"Call list_features (spec-query MCP) to inspect system architecture and feature specs dynamically from SQLite harness.db.",
-					"Adhere to task-XXX.md file boundary restrictions strictly.",
-					`Primary stack: ${Array.isArray(config.stack) ? config.stack.join(", ") : config.stack}`,
-				];
-		if (config.memoryBackend?.type === "ai-memory") {
-			directives.push(
-				"Query ai-memory for cross-agent project context and wiki retrieval on task startup.",
-			);
-		}
+		const stackStr = Array.isArray(config.stack)
+			? config.stack.join(", ")
+			: config.stack;
 
+		const directives = [
+			"2-Mode Operating System Active: @planner (planning & spec slicing) and @builder (strict TDD task execution).",
+			"Never write application code when acting as @planner.",
+			"All code generation in @builder must strictly respect allowedFiles declared in task-XXX.md.",
+			"Always run verification via `harness verify <taskId>` or deterministic test commands.",
+			`Primary stack: ${stackStr}`,
+		];
 		const agents: Record<string, unknown> = {};
 		for (const agent of customAgents) {
 			agents[agent.name] = {
@@ -104,6 +77,10 @@ export class AntigravitySerializer {
 				relativePath: "antigravity.json",
 				content: JSON.stringify(payload, null, 2),
 			},
+			{
+				relativePath: "AGENTS.md",
+				content: AntigravitySerializer.generateAgentsMd(config),
+			},
 		];
 
 		for (const agent of customAgents) {
@@ -114,5 +91,41 @@ export class AntigravitySerializer {
 		}
 
 		return files;
+	}
+
+	private static generateAgentsMd(config: HarnessConfig): string {
+		const stackStr = Array.isArray(config.stack)
+			? config.stack.join(", ")
+			: config.stack;
+
+		return [
+			`# Antigravity Directive: ${config.projectName}`,
+			"",
+			`You are operating within the 2-Mode AI Workflow Harness framework for **${config.projectName}**.`,
+			"",
+			"## Operational Rules",
+			"1. **2-Mode System Architecture (@planner & @builder):**",
+			"   - Use \`@planner\` for system design, architectural slicing, living spec generation, and task manifest creation.",
+			"   - Never write application implementation source code when acting as \`@planner\`.",
+			"   - Use \`@builder\` for strict TDD implementation of task manifests.",
+			"",
+			"2. **Task Boundary Enforcement:**",
+			"   - All code generation in \`@builder\` mode must strictly respect \`allowedFiles\` declared in \`.harness/tasks/task-XXX.md\`.",
+			"   - Standard task boundary invariant: max 2 implementation code files + 1 test file (max 3 total).",
+			"",
+			"3. **Deterministic Verification Gate:**",
+			"   - Always run verification via \`harness verify <taskId>\` rather than raw unmonitored test commands.",
+			"   - Exit-0 test verification and file boundary compliance are mandatory before marking any task DONE.",
+			"",
+			"4. **Living Specs & Context Access:**",
+			"   - Primary master application summary: \`.harness/spec/app-summary.md\`.",
+			"   - System features and specs are queryable via the native \`spec-query\` MCP server.",
+			"",
+			"## Technology & Stack Context",
+			`- **Primary Stack:** ${stackStr}`,
+			`- **Package Manager:** ${config.packageManager}`,
+			`- **Test Command:** \`${config.commands.test}\``,
+			`- **Lint Command:** \`${config.commands.lint}\``,
+		].join("\n");
 	}
 }

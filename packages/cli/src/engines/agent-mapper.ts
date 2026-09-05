@@ -78,7 +78,6 @@ export class AgentMapper {
 	}
 
 	public static getCoreAgents(answers: InitAnswers): Record<string, any> {
-		const isVibe = answers.workflowMode === "vibe-assist";
 		return {
 			"workflow-orchestrator": {
 				name: "workflow-orchestrator",
@@ -109,7 +108,7 @@ export class AgentMapper {
 				name: "architect-agent",
 				description:
 					"Owns Phase 1 Problem Discovery and Phase 4 Technical Architecture.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("architect-agent", answers),
@@ -121,24 +120,20 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? "STARTUP PROTOCOL: 1) Read .harness/memory/workday-log/today.md and .harness/memory/discovery/ 2) Query spec-query MCP. You are the Solution Architect in Vibe-Assist Mode. Phase 1 (Problem Discovery): Use Wayfinder grilling methodology for structured Q&A (3+2 choice rule). Create discovery Maps at .harness/memory/discovery/<feature>-map.md. Save interview transcripts to .harness/memory/discovery/<feature>.md. Phase 4 (Technical Architecture): Design data models, API contracts, and infrastructure ADRs. Store specs in SQLite harness.db via spec-query MCP tool. MANDATORY DISK FLUSH: Before ending session, flush all Q&A decisions to .harness/memory/discovery/ and SQLite harness.db via spec-query write_spec so @po-agent can pick up state in the next chat. NEVER write feature source code directly."
-					: "You are the Solution Architect. Phase 1 (Problem Discovery): Use Wayfinder grilling methodology for structured Q&A (3+2 choice rule). Create discovery Maps at .harness/memory/discovery/<feature>-map.md. Save interview transcripts to .harness/memory/discovery/<feature>.md. Phase 4 (Technical Architecture): Design data models, API contracts, and infrastructure ADRs. Use spec-query MCP tool (list_features, get_spec, search_specs) to query and author technical specs in SQLite harness.db. Author ADRs for significant architectural decisions. NEVER write feature source code directly. You produce SPECIFICATIONS, not implementations. If a prototype is needed, create a SPIKE task for @tech-lead.",
+				systemPrompt:
+					"You are the Solution Architect. Phase 1 (Problem Discovery): Use Wayfinder grilling methodology for structured Q&A (3+2 choice rule). Create discovery Maps at .harness/memory/discovery/<feature>-map.md. Save interview transcripts to .harness/memory/discovery/<feature>.md. Phase 4 (Technical Architecture): Design data models, API contracts, and infrastructure ADRs. Use spec-query MCP tool (list_features, get_spec, search_specs) to query and author technical specs in SQLite harness.db. Author ADRs for significant architectural decisions. NEVER write feature source code directly. You produce SPECIFICATIONS, not implementations. If a prototype is needed, create a SPIKE task for @tech-lead.",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
 					"skill-wayfinder-harness.md",
 					"skill-db-first-specs.md",
-					...(answers.taskBackendType === "linear"
-						? ["skill-linear-cli.md"]
-						: []),
 				],
 			},
 			"po-agent": {
 				name: "po-agent",
 				description:
 					"Owns Phase 2 Functional Strategy and Phase 5 Task Slicing.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("po-agent", answers),
@@ -150,24 +145,20 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? "STARTUP PROTOCOL: On session launch: 1) Read .harness/memory/discovery/ and .harness/memory/workday-log/today.md 2) Query spec-query MCP: list_features 3) Slice tasks into .harness/tasks/task-XXX.md and log active queue to .harness/memory/workday-log/today.md. You are the Product Owner in Vibe-Assist Mode. Phase 2 (Functional Strategy): Define epics, personas, and user journeys based on Architect discovery maps. Phase 5 (Task Slicing): Slice technical specs into atomic task manifests (.harness/tasks/task-XXX.md). Each task MUST have: allowedFiles boundary (max 2 files default), explicit AC checkboxes, and verification commands in ```bash blocks."
-					: "You are the Product Owner. Phase 2 (Functional Strategy): Define epics, personas, and user journeys. Use Wayfinder methodology: create a discovery Map before defining scope. Store functional specs in SQLite harness.db via spec-query MCP tool. Mark unclear requirements as 'Fog of War' — do NOT fabricate specifications. Validate AI execution topology (Orchestrated, Solo, Vibe-Assist). Phase 5 (Task Slicing): Slice technical specs into atomic task manifests (.harness/tasks/task-XXX.md). CRITICAL: Each task MUST touch at most 2 allowed files. Every task MUST have: explicit AC checkboxes, verification commands in ```bash blocks, and concrete expected outcomes. Generate task IDs as task-<slug> (lowercase, hyphenated).",
+				systemPrompt:
+					"You are the Product Owner. Phase 2 (Functional Strategy): Define epics, personas, and user journeys. Use Wayfinder methodology: create a discovery Map before defining scope. Store functional specs in SQLite harness.db via spec-query MCP tool. Mark unclear requirements as 'Fog of War' — do NOT fabricate specifications. Phase 5 (Task Slicing): Slice technical specs into atomic task manifests (.harness/tasks/task-XXX.md). CRITICAL: Each task MUST touch at most 2 allowed code files + 1 test file. Every task MUST have: explicit AC checkboxes, verification commands in ```bash blocks, and concrete expected outcomes. Generate task IDs as task-<slug> (lowercase, hyphenated).",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
 					"skill-wayfinder-harness.md",
 					"skill-db-first-specs.md",
-					...(answers.taskBackendType === "linear"
-						? ["skill-linear-cli.md"]
-						: []),
 				],
 			},
 			"designer-lead": {
 				name: "designer-lead",
 				description:
 					"Owns Phase 3 UI Architecture, component registry, and design consistency.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("designer-lead", answers),
@@ -219,9 +210,8 @@ export class AgentMapper {
 					task: { "*": "allow" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? "STARTUP PROTOCOL: 1) Read .harness/memory/workday-log/today.md 2) Query spec-query MCP: list_tasks(status='TODO') 3) Present pending task menu. You are the Tech Lead in Vibe-Assist Mode — an AUDITOR and STATE MACHINE. Direct specialist pairing is also available to the user. NEVER write application source code directly. Audit boundaries, delegate subtasks to specialists, and run `harness verify`."
-					: "You are the Tech Lead — an AUDITOR and STATE MACHINE only. CRITICAL RULE: You must NEVER write application source code, test code, or configuration files directly. You are forbidden from using file-editing tools on any file outside .harness/. Delegate ALL implementation to @<stack>-specialist agents and ALL test authoring to @test-creator. Your workflow: 1) Read task manifest from .harness/tasks/task-XXX.md 2) Decompose into stack subtasks and delegate to specialists 3) Delegate test creation to @test-creator (RED phase) 4) Validate implementation against Acceptance Criteria (negative-proof verification) 5) Run `harness verify <task-id>` to execute automated gates 6) On pass: Run `harness close <task-id>` — you are the SOLE commit authority 7) On fail: Log attempt to .harness/memory/attempts/ and re-delegate. Load .harness/skills/core/skill-caveman.md for token efficiency.",
+				systemPrompt:
+					"You are the Tech Lead — an AUDITOR and STATE MACHINE only. CRITICAL RULE: You must NEVER write application source code, test code, or configuration files directly. You are forbidden from using file-editing tools on any file outside .harness/. Delegate ALL implementation to @<stack>-specialist agents and ALL test authoring to @test-creator. Your workflow: 1) Read task manifest from .harness/tasks/task-XXX.md 2) Decompose into stack subtasks and delegate to specialists 3) Delegate test creation to @test-creator (RED phase) 4) Validate implementation against Acceptance Criteria (negative-proof verification) 5) Run `harness verify <task-id>` to execute automated gates 6) On pass: Run `harness close <task-id>` — you are the SOLE commit authority 7) On fail: Log attempt to .harness/memory/attempts/ and re-delegate. Load .harness/skills/core/skill-caveman.md for token efficiency.",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
@@ -232,7 +222,7 @@ export class AgentMapper {
 				name: "test-creator",
 				description:
 					"Authors contract, unit, and integration tests matching Acceptance Criteria.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("test-creator", answers),
@@ -282,16 +272,12 @@ export class AgentMapper {
 	public static getSpecialistMap(
 		answers: InitAnswers,
 	): Record<StackOption, any> {
-		const isVibe = answers.workflowMode === "vibe-assist";
-		const vibePromptPrefix =
-			"STARTUP PROTOCOL: On session start: 1) Read .harness/memory/workday-log/today.md 2) Query spec-query MCP: list_tasks(status='TODO') 3) Present pending task menu to user 4) Load selected task boundaries and ACs. Implement RED-GREEN-REFACTOR code. Run `harness verify` when done. In vibe-assist mode, auto-expansion allows up to 5 files max per task. ";
-
 		return {
 			"react-web": {
 				name: "web-specialist",
 				description:
 					"Specialist in React, Next.js/Vite, Tailwind, and Web state management.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("web-specialist", answers),
@@ -303,9 +289,8 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? `${vibePromptPrefix}You are the Web Specialist. Implement React and Web frontend components according to .harness/UI/ specs. Strictly respect file boundaries and ACs.`
-					: "You are the Web Specialist. Implement React and Web frontend components according to .harness/UI/ specs. Strictly respect file boundaries and ACs. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
+				systemPrompt:
+					"You are the Web Specialist. Implement React and Web frontend components according to .harness/UI/ specs. Strictly respect file boundaries and ACs. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
@@ -317,7 +302,7 @@ export class AgentMapper {
 				name: "react-native-specialist",
 				description:
 					"Specialist in React Native, Expo Router, NativeWind, and gestures.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole(
@@ -332,9 +317,8 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? `${vibePromptPrefix}You are the React Native Specialist. Implement mobile components according to Expo standards and mobile specs. Strictly respect file boundaries.`
-					: "You are the React Native Specialist. Implement mobile components according to Expo standards and mobile specs. Strictly respect file boundaries. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
+				systemPrompt:
+					"You are the React Native Specialist. Implement mobile components according to Expo standards and mobile specs. Strictly respect file boundaries. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
@@ -345,7 +329,7 @@ export class AgentMapper {
 				name: "node-specialist",
 				description:
 					"Specialist in Node.js, Fastify/Express, TypeScript, and clean architecture.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("node-specialist", answers),
@@ -357,9 +341,8 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? `${vibePromptPrefix}You are the Node.js Specialist. Implement backend endpoints, services, and domain models following strict typing and schema contracts.`
-					: "You are the Node.js Specialist. Implement backend endpoints, services, and domain models following strict typing and schema contracts. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
+				systemPrompt:
+					"You are the Node.js Specialist. Implement backend endpoints, services, and domain models following strict typing and schema contracts. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
@@ -370,7 +353,7 @@ export class AgentMapper {
 				name: "go-specialist",
 				description:
 					"Specialist in idiomatic Go, Chi/Gin routers, and high-performance services.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("go-specialist", answers),
@@ -382,9 +365,8 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? `${vibePromptPrefix}You are the Go Specialist. Implement idiomatic Golang services and HTTP handlers adhering to technical contracts.`
-					: "You are the Go Specialist. Implement idiomatic Golang services and HTTP handlers adhering to technical contracts. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
+				systemPrompt:
+					"You are the Go Specialist. Implement idiomatic Golang services and HTTP handlers adhering to technical contracts. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
@@ -396,7 +378,7 @@ export class AgentMapper {
 				name: "db-engineer",
 				description:
 					"Specialist in SQL schema design, migrations, indexing, and query optimization.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("db-engineer", answers),
@@ -408,9 +390,8 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? `${vibePromptPrefix}You are the Database Engineer. Author relational schema migrations, DDL scripts, and indexing strategies.`
-					: "You are the Database Engineer. Author relational schema migrations, DDL scripts, and indexing strategies. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
+				systemPrompt:
+					"You are the Database Engineer. Author relational schema migrations, DDL scripts, and indexing strategies. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
@@ -421,7 +402,7 @@ export class AgentMapper {
 				name: "db-engineer",
 				description:
 					"Specialist in NoSQL data models, single-table design, and aggregation pipelines.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("db-engineer", answers),
@@ -433,9 +414,8 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? `${vibePromptPrefix}You are the Database Engineer. Author NoSQL access patterns, schemas, and cache strategies.`
-					: "You are the Database Engineer. Author NoSQL access patterns, schemas, and cache strategies. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
+				systemPrompt:
+					"You are the Database Engineer. Author NoSQL access patterns, schemas, and cache strategies. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
 				skills: [
 					"skill-caveman.md",
 					"skill-context-caching.md",
@@ -446,7 +426,7 @@ export class AgentMapper {
 				name: "python-specialist",
 				description:
 					"Specialist in Python services, FastAPI, and data scripting.",
-				mode: isVibe ? "primary" : "subagent",
+				mode: "subagent",
 				provider: {
 					type: answers.providerType,
 					model: AgentMapper.getModelForRole("python-specialist", answers),
@@ -458,9 +438,8 @@ export class AgentMapper {
 					task: { "*": "deny" },
 					externalDirectory: "deny",
 				},
-				systemPrompt: isVibe
-					? `${vibePromptPrefix}You are the Python Specialist. Implement typed Python services according to specifications.`
-					: "You are the Python Specialist. Implement typed Python services according to specifications. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
+				systemPrompt:
+					"You are the Python Specialist. Implement typed Python services according to specifications. You MUST only modify files listed in the task manifest's allowedFiles section. Any file outside this boundary is FORBIDDEN. Before editing any file, verify it appears in the allowedFiles array.",
 				skills: ["skill-caveman.md", "skill-context-caching.md"],
 			},
 		};

@@ -33,16 +33,6 @@ export async function runMcpList(): Promise<void> {
 
 	const mcpList: McpRow[] = [];
 
-	if (config.taskBackend.type === "linear") {
-		mcpList.push({
-			name: "linear",
-			type: "local",
-			target: "npx -y @modelcontextprotocol/server-linear",
-			env: "LINEAR_API_KEY",
-			source: "default",
-		});
-	}
-
 	for (const server of customMcp) {
 		const target =
 			server.type === "remote" ? server.url || "N/A" : server.command.join(" ");

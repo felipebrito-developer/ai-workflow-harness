@@ -32,22 +32,6 @@ export class CursorSerializer {
 			args: sqArgs,
 		};
 
-		if (config.memoryBackend?.type === "ai-memory") {
-			const cmdParts =
-				config.memoryBackend.command && config.memoryBackend.command.length > 0
-					? config.memoryBackend.command
-					: ["ai-memory", "mcp-bridge"];
-			const [bin, ...args] = cmdParts;
-			mcpMap.mcpServers["ai-memory"] = {
-				command: bin,
-				args: args,
-				env: {
-					CLAUDE_CODE_SESSION_ID:
-						process.env.CLAUDE_CODE_SESSION_ID || "harness-session",
-				},
-			};
-		}
-
 		for (const server of mcpServers) {
 			if (server.type === "local" && server.command.length > 0) {
 				const [bin, ...args] = server.command;
@@ -64,45 +48,24 @@ export class CursorSerializer {
 			content: JSON.stringify(mcpMap, null, 2),
 		});
 
-		const isVibeMode = config.workflowMode === "vibe-assist";
-		const rulesContent = isVibeMode
-			? [
-					`# Project: ${config.projectName} (Vibe-Assist Mode)`,
-					"",
-					"## Operational Discipline",
-					"1. **Session Startup Routine (Interactive Pairing):**",
-					"   - Select primary agent personas (@architect-agent, @po-agent, stack specialists) directly in chat.",
-					"   - On startup, agents auto-read `.harness/memory/workday-log/today.md` and query `spec-query` MCP for pending tasks.",
-					"",
-					"2. **Context Loading:**",
-					"   - Call `list_features` using `spec-query` MCP server to inspect SQLite `harness.db`.",
-					"   - Read `.harness/spec/app-summary.md` for overall architecture.",
-					"",
-					"3. **Task Execution & Boundary Expansion:**",
-					"   - Read task manifest at `.harness/tasks/task-XXX.md`.",
-					"   - File boundaries auto-expand up to Max 5 files per task during interactive pairing.",
-					"   - Run `harness verify <task-id>` when implementation passes local tests.",
-					"",
-				]
-			: [
-					`# Project: ${config.projectName}`,
-					"",
-					"## Operational Discipline",
-					"1. **Session Startup Routine (Phase 1 Problem Discovery):**",
-					"   - On first launch or new feature, if no discovery map exists at `.harness/memory/discovery/`, trigger Phase 1 (Problem Discovery).",
-					"   - Have Architect grill the user via 3+2 choice rule to chart feature goals and generate discovery map before writing code.",
-					"",
-					"2. **Context Loading:**",
-					"   - Always read `.harness/spec/app-summary.md` first.",
-					"   - Drill down to `.harness/spec/features/<feature>/README.md` only when working on that feature.",
-					"   - Load sub-specs (`business/`, `ui/`, `technical/`) only when actively implementing.",
-					"",
-					"3. **Task Execution Boundary:**",
-					"   - Read the active task manifest at `.harness/tasks/task-XXX.md`.",
-					"   - You must ONLY modify files listed under `## 1. Allowed File Boundaries` in the task manifest.",
-					"   - Preflight verification and exit-0 tests are mandatory before marking any task as done.",
-					"",
-				];
+		const rulesContent = [
+			`# Project: ${config.projectName}`,
+			"",
+			"## Operational Discipline",
+			"1. **2-Mode System Architecture (@planner & @builder):**",
+			"   - `@planner` handles architectural slicing, living spec generation, and task manifest updates.",
+			"   - `@builder` executes implementation strictly respecting file boundaries in `task-XXX.md`.",
+			"",
+			"2. **Context Loading:**",
+			"   - Always read `.harness/spec/app-summary.md` first.",
+			"   - Use `spec-query` MCP server to inspect SQLite `harness.db`.",
+			"",
+			"3. **Task Execution Boundary Invariant:**",
+			"   - Read active task manifest at `.harness/tasks/task-XXX.md`.",
+			"   - `allowedFiles` must contain max 2 code files + 1 test file (max 3 total).",
+			"   - Run `harness verify <taskId>` before marking task done.",
+			"",
+		];
 
 		if (customAgents.length > 0) {
 			rulesContent.push("## Agents");

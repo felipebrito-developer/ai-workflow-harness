@@ -7,6 +7,8 @@ export interface TaskAttemptState {
 	attempts: number;
 	lastFailureReason?: string;
 	lastFailedCommand?: string;
+	agentName?: string;
+	tokenUsage?: { promptTokens?: number; completionTokens?: number };
 	updatedAt: string;
 }
 
