@@ -35,7 +35,7 @@ export async function runFeature(
 	const featId = `feat-${slug}`;
 	const taskId = `task-${slug}`;
 	const criteria = [
-		"Verify UI layout matches wireframe mockup",
+		"Verify component contract and layout invariants",
 		`Verify ${featureName} logic satisfies RED-GREEN test suite`,
 	];
 
@@ -61,7 +61,7 @@ export async function runFeature(
 			id: `chunk-${slug}-summary`,
 			topic_id: topicId,
 			level: "summary",
-			content: `\`\`\`ascii\n┌────────────────────────────────┐\n│   ${featureName.padEnd(27)} │\n├────────────────────────────────┤\n│ [Input]                        │\n│ [Action Button]                │\n└────────────────────────────────┘\n\`\`\``,
+			content: `// Living Spec Contract for ${featureName}\nexport interface ${featureName.replace(/[^a-zA-Z0-9]/g, "")}Spec {\n  title: "${featureName}";\n}`,
 			token_estimate: 80,
 		});
 
@@ -98,7 +98,7 @@ export async function runFeature(
 			...targetFiles.map((f) => `- \`${f}\``),
 			"",
 			"## 2. Acceptance Criteria",
-			"- [ ] Verify UI layout matches wireframe mockup",
+			"- [ ] Verify component contract and layout invariants",
 			`- [ ] Verify ${featureName} logic satisfies RED-GREEN test suite`,
 			"",
 			"## 3. Verification Commands",

@@ -108,7 +108,7 @@ const makeAnswers = (
 // ---------------------------------------------------------------------------
 function buildConfig(answers: InitAnswers): HarnessConfig {
 	const primaryModel = AgentMapper.getModelForRole(
-		"workflow-orchestrator",
+		"planner",
 		answers,
 	);
 	return HarnessConfigSchema.parse({
@@ -215,7 +215,7 @@ async function fullInit(
 // ============================================================================
 // TEST SUITE 1: Full React Web + OpenRouter + Orchestrated lifecycle
 // ============================================================================
-describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
+describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 	const tmpDir = path.join(PROJECT_ROOT, `.tmp-e2e-lifecycle-${Date.now()}`);
 	const harnessDir = path.join(tmpDir, ".harness");
 	const answers = makeAnswers();
@@ -264,14 +264,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 	// ---- B. Core Agent JSON Files ----
 	describe("B. Core Agent JSON Files", () => {
 		const agentNames = [
-			"workflow-orchestrator",
-			"architect-agent",
-			"po-agent",
-			"designer-lead",
-			"designer-ui",
-			"tech-lead",
-			"test-creator",
-			"test-runner",
+			"planner",
 		];
 
 		for (const agentName of agentNames) {
@@ -304,14 +297,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 	// ---- C. Agent Model Allocation (complex-efficient) ----
 	describe("C. Agent Model Allocation", () => {
 		const expectedModels: Record<string, string> = {
-			"workflow-orchestrator": "openrouter/z-ai/glm-5.2",
-			"architect-agent": "openrouter/deepseek/deepseek-r1",
-			"po-agent": "openrouter/z-ai/glm-5.2",
-			"designer-lead": "openrouter/z-ai/glm-5.2",
-			"designer-ui": "openrouter/z-ai/glm-5.2",
-			"tech-lead": "openrouter/z-ai/glm-5.2",
-			"test-runner": "openrouter/google/gemini-2.5-flash",
-			"test-creator": "openrouter/qwen/qwen-2.5-coder-32b-instruct",
+			planner: "openrouter/deepseek/deepseek-r1",
 		};
 
 		it("should assign correct models for complex-efficient preset", async () => {
@@ -327,76 +313,41 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 
 	// ---- D. Agent Permissions Matrix ----
 	describe("D. Agent Permissions Matrix", () => {
-		it("workflow-orchestrator is primary with full task delegation", async () => {
+		it("planner is primary with full task delegation", async () => {
 			const json = JSON.parse(
 				await fs.readFile(
-					path.join(harnessDir, "agents/workflow-orchestrator.json"),
+					path.join(harnessDir, "agents/planner.json"),
 					"utf-8",
 				),
 			);
 			expect(json.mode).toBe("primary");
 			expect(json.permissions.task).toEqual({ "*": "allow" });
-		});
-
-		it("tech-lead is primary with bash=allow and full task delegation", async () => {
-			const json = JSON.parse(
-				await fs.readFile(
-					path.join(harnessDir, "agents/tech-lead.json"),
-					"utf-8",
-				),
-			);
-			expect(json.mode).toBe("primary");
-			expect(json.permissions.bash).toBe("allow");
-			expect(json.permissions.task).toEqual({ "*": "allow" });
-		});
-
-		it("test-runner has edit=deny, bash=allow, promptCaching=false", async () => {
-			const json = JSON.parse(
-				await fs.readFile(
-					path.join(harnessDir, "agents/test-runner.json"),
-					"utf-8",
-				),
-			);
-			expect(json.permissions.edit).toBe("deny");
-			expect(json.permissions.bash).toBe("allow");
-			expect(json.provider.promptCaching).toBe(false);
-		});
-
-		it("designer-lead can delegate to designer-ui", async () => {
-			const json = JSON.parse(
-				await fs.readFile(
-					path.join(harnessDir, "agents/designer-lead.json"),
-					"utf-8",
-				),
-			);
-			expect(json.permissions.task["designer-ui"]).toBe("allow");
-			expect(json.permissions.task["*"]).toBe("deny");
 		});
 	});
 
 	// ---- E. Specialist Agents ----
 	describe("E. Specialist Agents", () => {
-		it("web-specialist exists with correct skills", async () => {
+		it("web-builder exists with correct skills", async () => {
 			const json = JSON.parse(
 				await fs.readFile(
-					path.join(harnessDir, "agents/web-specialist.json"),
+					path.join(harnessDir, "agents/web-builder.json"),
 					"utf-8",
 				),
 			);
-			expect(json.name).toBe("web-specialist");
-			expect(json.skills).toContain("skill-tailwind-shadcn.md");
-			expect(json.skills).toContain("skill-tanstack-query.md");
+			expect(json.name).toBe("web-builder");
+			expect(json.skills).toContain("skill-executable-specs.md");
+			expect(json.skills).toContain("skill-ui-contracts.md");
 		});
 
-		it("node-specialist exists with correct skills", async () => {
+		it("backend-builder exists with correct skills", async () => {
 			const json = JSON.parse(
 				await fs.readFile(
-					path.join(harnessDir, "agents/node-specialist.json"),
+					path.join(harnessDir, "agents/backend-builder.json"),
 					"utf-8",
 				),
 			);
-			expect(json.name).toBe("node-specialist");
-			expect(json.skills).toContain("skill-typescript-strict.md");
+			expect(json.name).toBe("backend-builder");
+			expect(json.skills).toContain("skill-executable-specs.md");
 		});
 	});
 
@@ -406,8 +357,6 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			"core/skill-harness.md",
 			"core/skill-caveman.md",
 			"core/skill-context-caching.md",
-			"core/skill-wayfinder-harness.md",
-			"core/skill-linear-cli.md",
 			"core/skill-db-first-specs.md",
 			"stack/skill-tailwind-shadcn.md",
 			"stack/skill-tanstack-query.md",
@@ -417,11 +366,13 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			"stack/skill-sqlc.md",
 			"stack/skill-postgres-schema-design.md",
 			"stack/skill-dynamodb-single-table.md",
+			"testing/skill-executable-specs.md",
+			"testing/skill-ui-contracts.md",
 			"testing/skill-tdd-assertions.md",
 			"testing/skill-zero-noise-reporter.md",
 		];
 
-		it("should install all 16 skill files starting with '# Skill:'", async () => {
+		it("should install all required skill files starting with '# Skill:'", async () => {
 			for (const skill of expectedSkills) {
 				const content = await fs.readFile(
 					path.join(harnessDir, "skills", skill),
@@ -436,14 +387,9 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 	describe("G. Pipeline Standards", () => {
 		const phases = [
 			"summary.md",
-			"phase-1-discovery.md",
-			"phase-2-strategy.md",
-			"phase-3-design.md",
-			"phase-4-architecture.md",
-			"phase-5-slicing.md",
 		];
 
-		it("should create all 6 pipeline standard files including summary index", async () => {
+		it("should create pipeline standard summary index", async () => {
 			for (const phase of phases) {
 				const stat = await fs.stat(
 					path.join(harnessDir, "standards/pipeline", phase),
@@ -465,7 +411,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 			expect(parsed.projectName).toBe("e2e-test-app");
 			expect(parsed.stack).toEqual(["react-web", "node"]);
 			expect(parsed.adapters).toEqual(["opencode", "antigravity"]);
-			expect(parsed.provider.model).toBe("openrouter/z-ai/glm-5.2");
+			expect(parsed.provider.model).toBe("openrouter/deepseek/deepseek-r1");
 			expect(parsed.provider.promptCaching).toBe(true);
 			expect(parsed.circuitBreakerLimit).toBe(3);
 		});
@@ -612,8 +558,6 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Orchestrated", () => {
 	});
 });
 
-
-
 // ============================================================================
 // TEST SUITE 3: Agent Workflow Readiness Validation
 // ============================================================================
@@ -645,56 +589,23 @@ describe("Agent Workflow Readiness Validation", () => {
 		await fs.rm(tmpDir, { recursive: true, force: true });
 	});
 
-	it("core orchestration agents reference .harness/ paths in systemPrompt", async () => {
-		// Only core orchestration agents navigate .harness/ directory structure.
-		// Specialist agents (web-specialist, node-specialist, etc.) and leaf agents
-		// (designer-ui, test-creator, test-runner) reference task manifests generically.
-		const coreOrcAgents = [
-			"workflow-orchestrator.json",
-			"architect-agent.json",
-			"po-agent.json",
-			"designer-lead.json",
-			"tech-lead.json",
-		];
-		for (const file of coreOrcAgents) {
-			const json = JSON.parse(
-				await fs.readFile(path.join(harnessDir, "agents", file), "utf-8"),
-			);
-			expect(json.systemPrompt).toMatch(/\.harness\//);
-		}
+	it("planner agent references .harness/ paths in systemPrompt", async () => {
+		const json = JSON.parse(
+			await fs.readFile(path.join(harnessDir, "agents/planner.json"), "utf-8"),
+		);
+		expect(json.systemPrompt).toMatch(/\.harness\//);
 	});
 
-	it("tech-lead enforces zero-code rule in systemPrompt", async () => {
+	it("planner enforces zero-code rule in systemPrompt", async () => {
 		const json = JSON.parse(
 			await fs.readFile(
-				path.join(harnessDir, "agents/tech-lead.json"),
+				path.join(harnessDir, "agents/planner.json"),
 				"utf-8",
 			),
 		);
 		expect(json.systemPrompt).toContain(
-			"NEVER write application source code",
+			"NEVER write application implementation code",
 		);
-	});
-
-	it("test-runner is read-only (edit=deny)", async () => {
-		const json = JSON.parse(
-			await fs.readFile(
-				path.join(harnessDir, "agents/test-runner.json"),
-				"utf-8",
-			),
-		);
-		expect(json.permissions.edit).toBe("deny");
-	});
-
-	it("test-creator systemPrompt mentions RED phase and failing tests", async () => {
-		const json = JSON.parse(
-			await fs.readFile(
-				path.join(harnessDir, "agents/test-creator.json"),
-				"utf-8",
-			),
-		);
-		expect(json.systemPrompt).toContain("RED phase");
-		expect(json.systemPrompt).toContain("failing test suites");
 	});
 
 	it("every agent skill reference exists in the skill catalog", async () => {
@@ -710,20 +621,10 @@ describe("Agent Workflow Readiness Validation", () => {
 		}
 	});
 
-	it("workflow-orchestrator can delegate to all agents (task.*=allow)", async () => {
+	it("planner can delegate to all agents (task.*=allow)", async () => {
 		const json = JSON.parse(
 			await fs.readFile(
-				path.join(harnessDir, "agents/workflow-orchestrator.json"),
-				"utf-8",
-			),
-		);
-		expect(json.permissions.task["*"]).toBe("allow");
-	});
-
-	it("tech-lead can delegate to specialists (task.*=allow)", async () => {
-		const json = JSON.parse(
-			await fs.readFile(
-				path.join(harnessDir, "agents/tech-lead.json"),
+				path.join(harnessDir, "agents/planner.json"),
 				"utf-8",
 			),
 		);

@@ -21,10 +21,13 @@ export const TaskFrontmatterSchema = z.object({
 
 function isTestFile(filePath: string): boolean {
 	const lower = filePath.toLowerCase();
+	const filename = lower.split("/").pop() || lower;
 	return (
 		lower.includes(".test.") ||
 		lower.includes(".spec.") ||
 		lower.endsWith("_test.go") ||
+		filename.startsWith("test_") ||
+		filename.endsWith("_test.py") ||
 		lower.includes("/tests/") ||
 		lower.includes("/__tests__/")
 	);

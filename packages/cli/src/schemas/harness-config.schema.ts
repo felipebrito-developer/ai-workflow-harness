@@ -7,7 +7,7 @@ export const HarnessConfigSchema = z.object({
 	packageManager: z
 		.enum(["bun", "pnpm", "yarn", "npm", "cargo", "go"])
 		.default("bun"),
-	adapters: z.array(z.enum(["opencode", "antigravity"])).min(1),
+	adapters: z.array(z.enum(["opencode", "antigravity", "cursor"])).min(1),
 	provider: z.object({
 		model: z.string().min(1),
 		promptCaching: z.boolean().default(true),

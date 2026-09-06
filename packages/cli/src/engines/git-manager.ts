@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import { execa } from "execa";
 
 export class GitManager {
@@ -165,10 +166,12 @@ export class GitManager {
 	}
 
 	public static async checkpointStash(taskId: string): Promise<string> {
+		const originalBranch = await GitManager.getCurrentBranch();
 		const stashBranch = `stash/${taskId.toLowerCase()}-checkpoint-${Date.now()}`;
 		await execa("git", ["checkout", "-b", stashBranch]);
 		await execa("git", ["add", "."]);
 		await execa("git", ["commit", "-m", `harness: checkpoint for ${taskId}`]);
+		await execa("git", ["checkout", originalBranch]);
 		return stashBranch;
 	}
 
@@ -180,7 +183,7 @@ export class GitManager {
 				await execa("git", ["checkout", "HEAD", "--", file]);
 			} catch {
 				try {
-					await execa("rm", ["-f", "--", file]);
+					await fs.unlink(file);
 				} catch {}
 			}
 		}

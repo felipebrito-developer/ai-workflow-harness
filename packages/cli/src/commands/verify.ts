@@ -3,6 +3,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { execa } from "execa";
 import matter from "gray-matter";
+import { AstValidator } from "../engines/ast-validator.js";
 import { CircuitBreaker } from "../engines/circuit-breaker.js";
 import { ConfigManager } from "../engines/config-manager.js";
 import { ErrorSanitizer } from "../engines/error-sanitizer.js";
@@ -54,6 +55,52 @@ export async function runVerify(taskId: string): Promise<void> {
 		console.log(
 			chalk.dim("  Task execution must be restricted to declared allowedFiles in task manifest."),
 		);
+
+		const { tripped, currentAttempts } = await CircuitBreaker.recordFailure(
+			taskId,
+			"boundary-check",
+			`File boundary violation: ${boundaryCheck.violatingFiles.join(", ")}`,
+			configLimit,
+			manifest.allowedFiles,
+		);
+
+		if (tripped) {
+			console.error(
+				chalk.bold.red(
+					`\n🚨 CIRCUIT BREAKER TRIPPED (${currentAttempts}/${configLimit} failed attempts).`,
+				),
+			);
+			console.error(
+				chalk.yellow(
+					"Working tree rolled back to preflight state.\n",
+				),
+			);
+		}
+		process.exit(1);
+	}
+
+	// 2b. AST Validation for Allowed Files
+	const astValidator = new AstValidator();
+	const astResult = await astValidator.validateFiles(manifest.allowedFiles);
+	if (!astResult.valid) {
+		console.log(chalk.bold.red("❌ AST Validation Failure:"));
+		for (const err of astResult.errors) {
+			console.log(chalk.red(`  - ${err}`));
+		}
+		const { tripped, currentAttempts } = await CircuitBreaker.recordFailure(
+			taskId,
+			"ast-validation",
+			`AST syntax/symbol errors: ${astResult.errors.slice(0, 3).join("; ")}`,
+			configLimit,
+			manifest.allowedFiles,
+		);
+		if (tripped) {
+			console.error(
+				chalk.bold.red(
+					`\n🚨 CIRCUIT BREAKER TRIPPED (${currentAttempts}/${configLimit} failed attempts).`,
+				),
+			);
+		}
 		process.exit(1);
 	}
 
@@ -107,13 +154,6 @@ export async function runVerify(taskId: string): Promise<void> {
 						`\n🚨 CIRCUIT BREAKER TRIPPED (${currentAttempts}/${configLimit} failed attempts).`,
 					),
 				);
-				try {
-					await GitManager.rollbackAllowedFiles(manifest.allowedFiles);
-				} catch (rollbackErr: any) {
-					console.error(
-						chalk.red(`Failed to rollback: ${rollbackErr.message}`),
-					);
-				}
 				console.error(
 					chalk.yellow(
 						"Working tree rolled back to preflight state. Spawn receipt written to .harness/memory/spawn-log/.\n",

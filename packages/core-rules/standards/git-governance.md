@@ -1,15 +1,15 @@
 # Git Governance & Commit Authority
 
-## 1. Sole Commit Authority
-To maintain repository integrity, AI subagents (`@test-creator`, `<stack>-specialist`, `@test-runner`) are **strictly prohibited** from executing Git commits. 
-
-Only the `@tech-lead` acting through the `harness close` command possesses the authority to commit code to the repository.
+## 1. Task Execution & Isolation
+All implementation work must occur on isolated task branches following the format: `task/<id>-<slug>`. Direct unmonitored commits to `main`, `master`, or `dev` are forbidden.
 
 ## 2. The Verification Gate
-Before a commit is allowed, the `@tech-lead` must verify:
-1. **Boundary Compliance:** No files outside the `task-XXX.md` allowed boundaries were modified.
-2. **Exit-0 Execution:** All linters, typecheckers, and test runners exit with code 0.
-3. **Negative-Proof AC Audit:** Every Gherkin Acceptance Criterion must map to a specific passing test assertion and implementation line.
+Before a task is marked `DONE` and merged, `harness verify <taskId>` must execute and confirm:
+1. **File Boundary Compliance:** No files outside `task-XXX.md` `allowedFiles` were modified.
+2. **AST Validation:** TypeScript syntax and symbol parsing pass cleanly without pre-emit diagnostics.
+3. **Deterministic Test Execution:** All verification commands exit with code 0.
+4. **Circuit Breaker Integrity:** The 3-attempt failure counter has not tripped.
 
-## 3. Task Isolation
-All work must occur on isolated task branches following the format: `task/<id>-<slug>`. Direct commits to `main`, `master`, or `dev` are forbidden.
+## 3. Operational Discipline
+- `@planner` handles architectural slicing, living spec generation, and task manifest updates.
+- `@builder` executes TDD tasks strictly within declared file boundaries.

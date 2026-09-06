@@ -1,6 +1,6 @@
 # AI Workflow Harness (`ai-workflow-harness`)
 
-A standardized, token-efficient, tool-agnostic AI development meta-framework for TypeScript and Go projects. Built for high context hygiene, deterministic verification gates, spec-driven execution, and built-in security auditing.
+A standardized, token-efficient, tool-agnostic AI development meta-framework for TypeScript and Go projects. Built for high context hygiene, deterministic verification gates, living executable specs, and 2-mode development discipline.
 
 ---
 
@@ -8,11 +8,11 @@ A standardized, token-efficient, tool-agnostic AI development meta-framework for
 
 For detailed architectural deep dives, command guides, and framework specifications, see:
 
-- 🏛️ **[System Architecture & Design](file:///home/chu/AI-project/ai-workflow-harness/docs/architecture.md)** — Monorepo design, SQLite WAL spec engine, `ai-memory` backend, and SOLID principles.
-- ⚡ **[CLI Command Reference](file:///home/chu/AI-project/ai-workflow-harness/docs/cli-commands.md)** — Exhaustive guide for `init`, `analyze`, `audit`, `feature`, `start`, `preflight`, `verify`, `checkpoint`, `close`, `agent`, and `mcp`.
-- 🔄 **[Planning Engine & Agile Workflow](file:///home/chu/AI-project/ai-workflow-harness/docs/planning-and-agile.md)** — 2-Pass Agile Fast-Track, 5-Phase Waterfall, `RiskEngine` scoring, and Delta Protocol.
-- 🔒 **[Security Scanner & Verification Gates](file:///home/chu/AI-project/ai-workflow-harness/docs/security-and-gates.md)** — Secret leak scanner (`.env`, `AWS_KEY`), dependency vulnerability checks (`bun audit`, `govulncheck`), AST validation, and 3-strike circuit breaker rollback.
-- 🔌 **[Tool Adapters & OpenRouter Integration](file:///home/chu/AI-project/ai-workflow-harness/docs/adapters-and-tools.md)** — Transpiler adapters for OpenCode, Antigravity, and Cursor, OpenRouter presets, and prompt caching.
+- 🏛️ **[System Architecture & Design](file:///home/chu/AI-project/ai-workflow-harness/docs/HARNESS_ARCHITECTURE_HANDOVER.md)** — Core operating philosophy, 2-agent separation, and living specs.
+- ⚡ **[CLI Command Reference](file:///home/chu/AI-project/ai-workflow-harness/docs/cli-commands.md)** — Lean CLI entrypoint guide for `init` and `verify <taskId>`.
+- 🔄 **[Planning & Execution Diagrams](file:///home/chu/AI-project/ai-workflow-harness/docs/diagrams/01-end-to-end-lifecycle.md)** — Lifecycle maps, JIT spec slicing, and verification gates.
+- 🔒 **[Security & Verification Gates](file:///home/chu/AI-project/ai-workflow-harness/docs/security-and-gates.md)** — Boundary enforcement, ErrorSanitizer cards, AST validation, and 3-strike circuit breaker rollback.
+- 🔌 **[Tool Adapters](file:///home/chu/AI-project/ai-workflow-harness/docs/adapters-and-tools.md)** — Adapters for OpenCode, Antigravity, and Cursor.
 
 ---
 
@@ -21,15 +21,15 @@ For detailed architectural deep dives, command guides, and framework specificati
 When AI agents work on complex software projects without guardrails, they encounter three core failure modes:
 
 1. **Context Loss & Pollution:** Unstructured chat sessions accumulate thousands of lines of raw code, causing token costs to explode and AI models to forget architectural invariants.
-2. **Hallucinated Regressions & Broken Files:** Models modify arbitrary files outside their assigned scope, breaking unmonitored packages and introducing secret leaks (`.env`, API keys).
-3. **Waterfall Overhead:** Heavy multi-turn planning slows down feature velocity when simple agile iteration is needed.
+2. **Hallucinated Regressions & Broken Files:** Models modify arbitrary files outside their assigned scope, breaking unmonitored packages.
+3. **Uncontrolled Retries:** Failing tests exhaust context windows as agents blindly retry without error compression or automatic rollbacks.
 
-### Core Goals & Solutions:
-- **2-Tier XP Planning Pipeline:** Choose between **Agile Fast-Track (2-Pass)** for rapid feature speed or **Hotfix (1-Pass)** for emergency patches.
-- **SQLite WAL Spec Engine (`SpecDatabase`):** Persists features, topics, and tasks in a local SQLite database (`.harness/harness.db`) with automatic Markdown export.
-- **Micro-Task Boundary Enforcement:** Agents execute atomic tasks (`task-XXX.md`) constrained to $\le 2$ files. Unpermitted edits are blocked by pre-commit hooks and preflight checks.
-- **Automated Security Gates (`SecurityScanner`):** Detects credential leaks, prevents committed `.env` files, and audits package vulnerabilities (`bun audit`, `govulncheck`).
-- **3-Strike Circuit Breaker (`CircuitBreaker`):** Tracks verification test failures and automatically rolls back working tree edits after 3 consecutive failures to prevent context window degradation.
+### Core Architecture Solutions:
+- **2-Mode System Architecture:** Separation of concerns between `@planner` (Discovery & JIT Spec Slicing) and stack-specific `@builder` agents (`@web-builder`, `@mobile-builder`, `@backend-builder`).
+- **Living Executable Specs:** Type contracts (`*.contract.ts`) and functional/UI component specs (`*.spec.ts`, `*.spec.tsx`) replace static prose Markdown and ASCII block wireframes.
+- **Atomic Task Boundary Enforcement:** Agents execute atomic tasks (`task-XXX.md`) constrained to $\le 2$ implementation code files + 1 test spec file (max 3 total).
+- **Deterministic Verification Gate (`harness verify <taskId>`):** Enforces file boundaries, executes AST syntax validation, runs verification test suites, sanitizes error logs, and manages a 3-strike circuit breaker.
+- **3-Strike Circuit Breaker:** Automatically rolls back working tree edits after 3 consecutive verification failures to prevent working tree corruption.
 
 ---
 
@@ -38,11 +38,11 @@ When AI agents work on complex software projects without guardrails, they encoun
 ```
 ai-workflow-harness/
 ├── packages/
-│   ├── cli/          # @harness/cli: Command engine, Zod schemas, SQLite DB, Security Scanner
-│   ├── core-rules/   # @harness/core-rules: Modular planning standards & protocol guardrails
-│   ├── templates/    # @harness/templates: Canonical agent configs & stack standards
-│   └── adapters/     # @harness/adapters: Transpilers for OpenCode, Antigravity, and Cursor
-├── docs/             # Comprehensive documentation modules
+│   ├── cli/          # @harness/cli: Gatekeeper CLI engine (init, verify), AST validator, CircuitBreaker
+│   ├── core-rules/   # @harness/core-rules: 2-mode planning pipeline & protocol guardrails
+│   ├── templates/    # @harness/templates: Canonical agent configs, standards, and skill catalog
+│   └── adapters/     # @harness/adapters: Transpiler adapters for OpenCode, Antigravity, and Cursor
+├── docs/             # Comprehensive documentation modules & visual architecture diagrams
 ```
 
 ---
@@ -57,57 +57,38 @@ git clone https://github.com/felipebrito-developer/ai-workflow-harness.git
 cd ai-workflow-harness
 bun install
 
-# Compile standalone binary & link globally
-bun run build
-sudo ln -sf $(pwd)/packages/cli/bin/harness /usr/local/bin/harness
+# Compile standalone binary
+bun run --filter @harness/cli build
 ```
 
-### Essential Commands
+### Essential CLI Commands
 
 ```bash
-# 1. Initialize harness (auto-runs brownfield discovery on existing repos)
-harness init
+# 1. Initialize harness in current workspace (scaffolds .harness/ and compiles tool adapters)
+bun run --cwd packages/cli dev init
 
-# 2. Run security & vulnerability audit
-harness audit
-
-# 3. Create a feature and generate 1-pass micro-task manifest
-harness feature "User Auth" --files "src/auth.ts,tests/auth.test.ts"
-
-# 4. Start task execution (creates task branch)
-harness start task-user-auth
-
-# 5. Run preflight AST and secret leak checks
-harness preflight task-user-auth
-
-# 6. Verify implementation tests & file boundaries
-harness verify task-user-auth
-
-# 7. Close task (marks DONE, exports SQLite DB to Markdown)
-harness close task-user-auth
+# 2. Verify task implementation against boundary rules & test suite
+bun run --cwd packages/cli dev verify task-001
 ```
 
 ---
 
-## 4. OpenRouter Model Presets & Multi-Agent Allocation
+## 4. 2-Mode Agent Roles & Model Strategy
 
-Configured in `harness.config.json` with `openrouter/` namespacing and prompt caching enabled:
-
-| Role | Complex — Best | Complex — Efficient | Small — Best | Small — Efficient |
-| :--- | :--- | :--- | :--- | :--- |
-| **@workflow-orchestrator** | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` |
-| **@architect-agent** | `openrouter/deepseek/deepseek-r1` | `openrouter/deepseek/deepseek-r1` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` |
-| **@po-agent** | `openrouter/z-ai/glm-5.2` | `openrouter/z-ai/glm-5.2` | `openrouter/z-ai/glm-5.2` | `openrouter/z-ai/glm-5.2` |
-| **@tech-lead** | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` |
-| **<stack>-specialist** | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` |
-| **@test-runner** | `openrouter/google/gemini-2.5-flash` | `openrouter/google/gemini-2.5-flash` | `openrouter/google/gemini-2.5-flash` | `openrouter/google/gemini-2.5-flash` |
+| Role | Mode | Purpose |
+| :--- | :--- | :--- |
+| **@planner** | Primary Architect | Architecture planning, living spec slicing, and task manifest creation. |
+| **@web-builder** | Subagent Executor | Executes React/Web frontend task manifests within declared file boundaries. |
+| **@mobile-builder** | Subagent Executor | Executes React Native task manifests within declared file boundaries. |
+| **@backend-builder** | Subagent Executor | Executes Node/Go/Python API & database implementation task manifests. |
 
 ---
 
 ## 5. Development & Testing
 
-Run the full automated test suite (100% coverage verified):
+Run the full monorepo typecheck and test suite:
 
 ```bash
+bun run typecheck
 bun test
 ```

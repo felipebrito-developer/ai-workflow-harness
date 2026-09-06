@@ -56,15 +56,15 @@ export class ErrorSanitizer {
 			}
 		}
 
-		// Truncate clean trace to max 12 lines to protect context window
-		const compactTrace = traceLines.slice(0, 12).join("\n");
+		// Truncate clean trace to max 4 lines to protect context window and stay <= 15 lines
+		const compactTrace = traceLines.slice(0, 4).join("\n");
 		const summary =
 			failureDetails[0] || "Command failed with non-zero exit code";
 
 		return {
 			failedCommand: command,
 			summary,
-			failureDetails: failureDetails.slice(0, 8),
+			failureDetails: failureDetails.slice(0, 4),
 			cleanTrace: compactTrace,
 		};
 	}

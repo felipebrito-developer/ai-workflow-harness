@@ -16,8 +16,7 @@ export class AstValidator {
 			compilerOptions: {
 				target: ScriptTarget.ESNext,
 				allowJs: true,
-				declaration: true,
-				emitDeclarationOnly: true,
+				skipLibCheck: true,
 			},
 			skipAddingFilesFromTsConfig: true,
 		});
@@ -30,7 +29,7 @@ export class AstValidator {
 		const exportedSymbols: string[] = [];
 
 		for (const relPath of filePaths) {
-			const absPath = path.resolve(process.cwd(), relPath);
+			let absPath = path.resolve(process.cwd(), relPath);
 
 			// Only parse TypeScript / JavaScript files for deep AST validation
 			if (!/\.(ts|tsx|js|jsx)$/.test(relPath)) {
@@ -45,12 +44,26 @@ export class AstValidator {
 			try {
 				await fs.access(absPath);
 			} catch {
-				// Target file will be created by the task
-				continue;
+				if (relPath.startsWith("packages/cli/")) {
+					const trimmed = relPath.replace(/^packages\/cli\//, "");
+					const altAbs = path.resolve(process.cwd(), trimmed);
+					try {
+						await fs.access(altAbs);
+						absPath = altAbs;
+					} catch {
+						continue;
+					}
+				} else {
+					// Target file will be created by the task
+					continue;
+				}
 			}
 
 			try {
-				const sourceFile = this.project.addSourceFileAtPath(absPath);
+				let sourceFile = this.project.getSourceFile(absPath);
+				if (!sourceFile) {
+					sourceFile = this.project.addSourceFileAtPath(absPath);
+				}
 				const diagnostics = sourceFile.getPreEmitDiagnostics();
 
 				if (diagnostics.length > 0) {

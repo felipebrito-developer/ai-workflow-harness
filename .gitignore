@@ -4,4 +4,5 @@ packages/cli/node_modules/
 packages/cli/bin/
 dist/
 *.log
+*.tsbuildinfo
 .DS_Store

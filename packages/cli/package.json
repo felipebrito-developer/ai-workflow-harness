@@ -3,11 +3,12 @@
 	"version": "1.0.0",
 	"type": "module",
 	"bin": {
-		"harness": "./bin/harness.js"
+		"harness": "./bin/harness"
 	},
 	"scripts": {
 		"build": "bun build ./src/index.ts --compile --outfile bin/harness",
-		"dev": "bun run ./src/index.ts"
+		"dev": "bun run ./src/index.ts",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@harness/adapters": "*",

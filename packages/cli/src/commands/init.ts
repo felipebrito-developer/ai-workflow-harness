@@ -222,6 +222,18 @@ export async function runInit(): Promise<void> {
 				return this.state.answers.modelPreset !== "custom";
 			},
 		},
+		{
+			type: "input",
+			name: "cmdTest",
+			message: "Verification Test Command:",
+			initial: brownfieldResult?.testCmd || "bun test",
+		},
+		{
+			type: "input",
+			name: "cmdLint",
+			message: "Verification Lint Command:",
+			initial: brownfieldResult?.lintCmd || "bunx @biomejs/biome check .",
+		},
 	];
 
 	const answers = await enquirer.prompt<InitAnswers>(questions);

@@ -6,6 +6,7 @@
 	"workspaces": ["packages/*"],
 	"scripts": {
 		"build": "bun run --filter @harness/cli build",
+		"typecheck": "bun run --cwd packages/cli typecheck && bun run --cwd packages/adapters typecheck",
 		"test": "bun test",
 		"lint": "bunx @biomejs/biome check .",
 		"lint:fix": "bunx @biomejs/biome check --write ."

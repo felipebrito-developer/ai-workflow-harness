@@ -10,29 +10,24 @@ The Harness framework is natively tool-agnostic, transpiling canonical agent con
 
 - **OpenCode Adapter (`OpenCodeSerializer`):**
   - Generates `opencode.json` and `opencode.md`.
-  - Configures agent permission matrix (`architect`, `test-runner`, `code-reviewer`).
-  - Sets OpenRouter `baseURL: "https://openrouter.ai/api/v1"` and `promptCaching: true`.
+  - Configures agent permission matrix for `@planner` and stack-specific `@builder` agents.
+  - Sets OpenRouter `baseURL: "https://openrouter.ai/api/v1"` and `setCacheKey: true` for prompt caching.
 - **Antigravity Adapter (`AntigravitySerializer`):**
-  - Generates `antigravity.json`.
-  - Registers MCP server configurations (`ai-memory`, `filesystem`, `linear`).
-  - Injects executor directives enforcing `task-XXX.md` file boundary rules.
+  - Generates `antigravity.json` and `AGENTS.md`.
+  - Registers `spec-query` and custom MCP server configurations.
+  - Injects executor directives enforcing `task-XXX.md` file boundary rules and `harness verify <taskId>`.
 - **Cursor Adapter (`CursorSerializer`):**
-  - Generates `.cursorrules` instructing Cursor models to adhere to harness task boundaries.
+  - Generates `.cursor/mcp.json` and `.cursorrules` instructing Cursor models to adhere to harness task boundaries.
 
 ---
 
-## 2. OpenRouter Model Presets & Prompt Caching
+## 2. 2-Mode Agent Role Mapping & Model Allocation
 
 OpenRouter models use standard `openrouter/<vendor>/<model-id>` namespacing with prompt caching enabled:
 
-| Role | Complex — Best | Complex — Efficient | Small — Best | Small — Efficient |
-| :--- | :--- | :--- | :--- | :--- |
-| **@workflow-orchestrator** | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` |
-| **@architect-agent** | `openrouter/deepseek/deepseek-r1` | `openrouter/deepseek/deepseek-r1` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` |
-| **@po-agent** | `openrouter/z-ai/glm-5.2` | `openrouter/z-ai/glm-5.2` | `openrouter/z-ai/glm-5.2` | `openrouter/z-ai/glm-5.2` |
-| **@tech-lead** | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` |
-| **@designer-lead / UI** | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/z-ai/glm-5.2` |
-| **<stack>-specialist** | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` |
-| **@db-engineer** | `openrouter/deepseek/deepseek-r1` | `openrouter/deepseek/deepseek-r1` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` |
-| **@test-creator** | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` | `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/qwen/qwen-2.5-coder-32b-instruct` |
-| **@test-runner** | `openrouter/google/gemini-2.5-flash` | `openrouter/google/gemini-2.5-flash` | `openrouter/google/gemini-2.5-flash` | `openrouter/google/gemini-2.5-flash` |
+| Role | Mode | Description / Model Strategy |
+| :--- | :--- | :--- |
+| **@planner** | Primary Architect | Architecture planning, living spec slicing (`openrouter/deepseek/deepseek-r1` or `claude-3.5-sonnet`). |
+| **@web-builder** | Subagent Executor | React web frontend TDD implementation (`openrouter/qwen/qwen-2.5-coder-32b-instruct`). |
+| **@mobile-builder** | Subagent Executor | React Native mobile TDD implementation (`openrouter/qwen/qwen-2.5-coder-32b-instruct`). |
+| **@backend-builder** | Subagent Executor | API & database TDD implementation (`openrouter/qwen/qwen-2.5-coder-32b-instruct`). |

@@ -60,6 +60,6 @@ Each ticket maps to a task manifest in `.harness/tasks/`:
 ## Integration with Harness
 - Maps are stored in `.harness/memory/discovery/` (persisted, not gitignored)
 - Grilling sessions are logged to `.harness/memory/discovery/<feature>.md`
-- Research findings become chunks in the SpecDatabase via `harness feature`
-- The PO Agent uses this skill in Phase 2 (epics) and Phase 5 (slicing)
-- The Architect Agent uses this skill in Phase 1 (discovery) and Phase 4 (ADRs)
+- Research findings become chunks in the SpecDatabase or summary markdown
+- `@planner` uses this skill during architecture discovery and task manifest slicing
+
