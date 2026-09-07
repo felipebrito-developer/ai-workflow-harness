@@ -14,7 +14,7 @@ The Harness framework is natively tool-agnostic, transpiling canonical agent con
   - Sets OpenRouter `baseURL: "https://openrouter.ai/api/v1"` and `setCacheKey: true` for prompt caching.
 - **Antigravity Adapter (`AntigravitySerializer`):**
   - Generates `antigravity.json` and `AGENTS.md`.
-  - Registers `spec-query` and custom MCP server configurations.
+  - Registers custom MCP server configurations.
   - Injects executor directives enforcing `task-XXX.md` file boundary rules and `harness verify <taskId>`.
 - **Cursor Adapter (`CursorSerializer`):**
   - Generates `.cursor/mcp.json` and `.cursorrules` instructing Cursor models to adhere to harness task boundaries.

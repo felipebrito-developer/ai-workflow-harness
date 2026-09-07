@@ -8,7 +8,6 @@ import { CircuitBreaker } from "../engines/circuit-breaker.js";
 import { ConfigManager } from "../engines/config-manager.js";
 import { ErrorSanitizer } from "../engines/error-sanitizer.js";
 import { GitManager } from "../engines/git-manager.js";
-import { SpecDatabase } from "../engines/spec-database.js";
 import { parseTaskManifest } from "../parsers/task-parser.js";
 import type { HarnessConfig } from "../schemas/harness-config.schema.js";
 
@@ -104,19 +103,6 @@ export async function runVerify(taskId: string): Promise<void> {
 		process.exit(1);
 	}
 
-	// Sync task state with SQLite harness.db
-	try {
-		const specDb = new SpecDatabase(path.join(process.cwd(), ".harness"));
-		const mappedStatus = manifest.frontmatter.status === "BLOCKED" ? "IN_PROGRESS" : (manifest.frontmatter.status as "TODO" | "IN_PROGRESS" | "VERIFYING" | "DONE");
-		specDb.upsertTask({
-			id: manifest.frontmatter.id,
-			spec_id: manifest.frontmatter.feature_ref || "feat-general",
-			status: mappedStatus,
-			allowed_files: JSON.stringify(manifest.allowedFiles),
-			acceptance_criteria: JSON.stringify(manifest.acceptanceCriteria || []),
-		});
-		specDb.close();
-	} catch {}
 	console.log(chalk.green("✔ File boundaries verified."));
 
 	// 3. Execute Verification Commands
@@ -185,18 +171,6 @@ export async function runVerify(taskId: string): Promise<void> {
 			chalk.red(`Failed to update task status to DONE: ${writeErr.message}`),
 		);
 	}
-
-	try {
-		const specDb = new SpecDatabase(path.join(process.cwd(), ".harness"));
-		specDb.upsertTask({
-			id: manifest.frontmatter.id,
-			spec_id: manifest.frontmatter.feature_ref || "feat-general",
-			status: "DONE",
-			allowed_files: JSON.stringify(manifest.allowedFiles),
-			acceptance_criteria: JSON.stringify(manifest.acceptanceCriteria || []),
-		});
-		specDb.close();
-	} catch {}
 
 	await CircuitBreaker.resetAttempts(taskId);
 	console.log(

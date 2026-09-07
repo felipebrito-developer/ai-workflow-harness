@@ -16,22 +16,6 @@ export class CursorSerializer {
 			mcpServers: {},
 		};
 
-		const pm = config.packageManager || "bun";
-		const [sqBin, ...sqArgs] =
-			pm === "bun"
-				? ["bun", ".harness/mcp/spec-query.ts"]
-				: pm === "pnpm"
-					? ["pnpm", "exec", "tsx", ".harness/mcp/spec-query.ts"]
-					: pm === "yarn"
-						? ["yarn", "dlx", "tsx", ".harness/mcp/spec-query.ts"]
-						: ["npx", "-y", "tsx", ".harness/mcp/spec-query.ts"];
-
-		// Always register native spec-query MCP server for database spec lookup
-		mcpMap.mcpServers["spec-query"] = {
-			command: sqBin,
-			args: sqArgs,
-		};
-
 		for (const server of mcpServers) {
 			if (server.type === "local" && server.command.length > 0) {
 				const [bin, ...args] = server.command;
@@ -58,7 +42,7 @@ export class CursorSerializer {
 			"",
 			"2. **Context Loading:**",
 			"   - Always read `.harness/spec/app-summary.md` first.",
-			"   - Use `spec-query` MCP server to inspect SQLite `harness.db`.",
+			"   - Inspect living specs (`*.contract.ts`, `*.spec.ts`, `*.spec.tsx`) for typed contracts.",
 			"",
 			"3. **Task Execution Boundary Invariant:**",
 			"   - Read active task manifest at `.harness/tasks/task-XXX.md`.",

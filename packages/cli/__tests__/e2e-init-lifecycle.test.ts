@@ -3,7 +3,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { AgentMapper } from "../src/engines/agent-mapper.js";
 import { TemplateScaffolder } from "../src/engines/template-scaffolder.js";
-import { SpecDatabase } from "../src/engines/spec-database.js";
 import {
 	HarnessConfigSchema,
 	type HarnessConfig,
@@ -194,20 +193,36 @@ async function fullInit(
 		);
 	}
 
-	// 8. App summary + SpecDatabase
-	const specDb = new SpecDatabase(harnessDir);
-	specDb.upsertFeature({
-		id: "feat-core",
-		name: config.projectName,
-		slug: "core-architecture",
-		summary: `Core architectural foundation for ${config.projectName}`,
-		status: "STABLE",
-	});
-	await specDb.exportToMarkdown(harnessDir);
-	specDb.close();
-
-	// 9. Adapter compilation
+	// 8. Adapter compilation
 	await AdapterCompiler.compileAll(config, tmpDir);
+
+	// 9. Write Master Spec Index (app-summary.md)
+	const appSummaryPath = path.join(harnessDir, "spec", "app-summary.md");
+	try {
+		await fs.access(appSummaryPath);
+	} catch {
+		await fs.writeFile(
+			appSummaryPath,
+			[
+				`# ${answers.projectName} — Application Summary`,
+				"",
+				"> **Status:** In Development",
+				`> **Stack:** ${answers.stack.join(", ")}`,
+				"",
+				"## System Overview",
+				"High-level description of system goals, architecture invariants, and user personas.",
+				"",
+				"## Features Index",
+				"| Feature | Status | Summary | Spec Path |",
+				"| :--- | :--- | :--- | :--- |",
+				"",
+				"## Active Milestones",
+				"- [ ] M0: Architectural Foundation",
+				"",
+			].join("\n"),
+			"utf-8",
+		);
+	}
 
 	return config;
 }
@@ -357,7 +372,6 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 			"core/skill-harness.md",
 			"core/skill-caveman.md",
 			"core/skill-context-caching.md",
-			"core/skill-db-first-specs.md",
 			"stack/skill-tailwind-shadcn.md",
 			"stack/skill-tanstack-query.md",
 			"stack/skill-expo-router.md",
@@ -442,10 +456,6 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 			expect(json.provider.openrouter.options.baseURL).toBe(
 				"https://openrouter.ai/api/v1",
 			);
-
-			// MCP servers
-			expect(json.mcp).toHaveProperty("spec-query");
-			expect(json.mcp["spec-query"].command).toEqual(["bun", ".harness/mcp/spec-query.ts"]);
 		});
 
 		it("should generate opencode.md with project info and commands", async () => {
@@ -489,7 +499,6 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 			expect(json.project).toBe("e2e-test-app");
 			expect(Array.isArray(json.directives)).toBe(true);
 			expect(json.directives.length).toBeGreaterThanOrEqual(4);
-			expect(json.mcpServers).toHaveProperty("spec-query");
 
 			const agentsMd = await fs.readFile(
 				path.join(tmpDir, "AGENTS.md"),
@@ -518,19 +527,14 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 		});
 	});
 
-	// ---- L. SpecDatabase ----
-	describe("L. SpecDatabase", () => {
+	// ---- L. App Summary ----
+	describe("L. App Summary", () => {
 		it("should create spec/app-summary.md with project name", async () => {
 			const content = await fs.readFile(
 				path.join(harnessDir, "spec/app-summary.md"),
 				"utf-8",
 			);
 			expect(content).toContain("e2e-test-app");
-		});
-
-		it("should create harness.db database file", async () => {
-			const stat = await fs.stat(path.join(harnessDir, "harness.db"));
-			expect(stat.isFile()).toBe(true);
 		});
 	});
 

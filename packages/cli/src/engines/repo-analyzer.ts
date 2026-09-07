@@ -2,7 +2,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import chalk from "chalk";
 import enquirer from "enquirer";
-import { SpecDatabase } from "./spec-database.js";
 
 export interface RepoAnalysisResult {
 	projectName: string;
@@ -181,32 +180,6 @@ export class RepoAnalyzer {
 			.split(",")
 			.map((m) => m.trim())
 			.filter(Boolean);
-
-		// Seed SQLite database
-		const harnessDir = path.join(cwd, ".harness");
-		await fs.mkdir(harnessDir, { recursive: true });
-		const specDb = new SpecDatabase(harnessDir);
-
-		specDb.upsertFeature({
-			id: "feat-brownfield-core",
-			name: answers.confirmName,
-			slug: "brownfield-baseline",
-			summary: `Auto-analyzed baseline architecture for ${answers.confirmName}`,
-			status: "STABLE",
-		});
-
-		for (const mod of finalModules) {
-			specDb.upsertTopic({
-				id: `topic-${mod}`,
-				feature_id: "feat-brownfield-core",
-				category: "technical",
-				slug: mod.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-				title: `Module: ${mod}`,
-			});
-		}
-
-		await specDb.exportToMarkdown(harnessDir);
-		specDb.close();
 
 		return {
 			projectName: answers.confirmName,

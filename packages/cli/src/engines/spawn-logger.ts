@@ -138,7 +138,7 @@ export class SpawnLogger {
 	}
 
 	/**
-	 * Write a comprehensive Spawn Receipt markdown file and append to ai-memory wiki
+	 * Write a comprehensive Spawn Receipt markdown file
 	 */
 	public static async writeReceipt(receipt: SpawnReceipt): Promise<string> {
 		const spawnLogDir = SpawnLogger.getSpawnLogDir();

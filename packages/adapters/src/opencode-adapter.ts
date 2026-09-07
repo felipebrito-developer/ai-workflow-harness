@@ -162,21 +162,6 @@ export class OpenCodeSerializer {
 
 		// MCP Servers mapping
 		const mcpMap: Record<string, unknown> = {};
-		const pm = config.packageManager || "bun";
-		const specQueryCmd =
-			pm === "bun"
-				? ["bun", ".harness/mcp/spec-query.ts"]
-				: pm === "pnpm"
-					? ["pnpm", "exec", "tsx", ".harness/mcp/spec-query.ts"]
-					: pm === "yarn"
-						? ["yarn", "dlx", "tsx", ".harness/mcp/spec-query.ts"]
-						: ["npx", "-y", "tsx", ".harness/mcp/spec-query.ts"];
-
-		// Always register native spec-query MCP server for database spec lookup
-		mcpMap["spec-query"] = {
-			type: "local",
-			command: specQueryCmd,
-		};
 
 		for (const server of mcpServers) {
 			if (server.type === "remote" && server.url) {
@@ -293,9 +278,9 @@ export class OpenCodeSerializer {
 			"   - `@planner` handles architectural slicing, living spec generation, and task manifest updates.",
 			"   - `@builder` executes implementation strictly respecting file boundaries in `task-XXX.md`.",
 			"",
-			"2. **Context Loading (DB-First MCP Access):**",
-			"   - Call `list_features` using `spec-query` MCP server to inspect SQLite `harness.db`.",
+			"2. **Context Loading (Macro Blueprint & Living Specs):**",
 			"   - Read `.harness/spec/app-summary.md` for master application blueprint.",
+			"   - Inspect living specs (`*.contract.ts`, `*.spec.ts`, `*.spec.tsx`) for typed contracts and behavior.",
 			"",
 			"3. **Task Execution Boundary:**",
 			"   - Read active task manifest at `.harness/tasks/task-XXX.md`.",

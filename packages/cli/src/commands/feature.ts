@@ -4,7 +4,6 @@ import chalk from "chalk";
 import matter from "gray-matter";
 import { ConfigManager } from "../engines/config-manager.js";
 import { RiskEngine } from "../engines/risk-engine.js";
-import { SpecDatabase } from "../engines/spec-database.js";
 
 export async function runFeature(
 	featureName: string,
@@ -29,53 +28,10 @@ export async function runFeature(
 	const risk = RiskEngine.evaluateTaskRisk(targetFiles, isSchema);
 	console.log(RiskEngine.formatRiskCard(risk));
 
-	// 2. Insert into SpecDatabase
+	// 2. Prepare Task Manifest
 	await fs.mkdir(harnessDir, { recursive: true });
-	const specDb = new SpecDatabase(harnessDir);
 	const featId = `feat-${slug}`;
 	const taskId = `task-${slug}`;
-	const criteria = [
-		"Verify component contract and layout invariants",
-		`Verify ${featureName} logic satisfies RED-GREEN test suite`,
-	];
-
-	specDb.transaction(() => {
-		specDb.upsertFeature({
-			id: featId,
-			name: featureName,
-			slug,
-			summary: `Feature ${featureName} created via Agile 1-pass cycle`,
-			status: "DRAFT",
-		});
-
-		const topicId = `topic-${slug}-ui`;
-		specDb.upsertTopic({
-			id: topicId,
-			feature_id: featId,
-			category: "ui",
-			slug: `${slug}-ui`,
-			title: `${featureName} Screen & UI Contract`,
-		});
-
-		specDb.upsertChunk({
-			id: `chunk-${slug}-summary`,
-			topic_id: topicId,
-			level: "summary",
-			content: `// Living Spec Contract for ${featureName}\nexport interface ${featureName.replace(/[^a-zA-Z0-9]/g, "")}Spec {\n  title: "${featureName}";\n}`,
-			token_estimate: 80,
-		});
-
-		specDb.upsertTask({
-			id: taskId,
-			spec_id: featId,
-			status: "TODO",
-			allowed_files: JSON.stringify(targetFiles),
-			acceptance_criteria: JSON.stringify(criteria),
-		});
-	})();
-
-	await specDb.exportToMarkdown(harnessDir);
-	specDb.close();
 
 	// 3. Emit Task Manifest task-XXX.md
 	const tasksDir = path.join(harnessDir, "tasks");

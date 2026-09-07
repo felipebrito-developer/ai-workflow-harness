@@ -6,7 +6,6 @@ import enquirer from "enquirer";
 import { execa } from "execa";
 import { AgentMapper } from "../engines/agent-mapper.js";
 import { RepoAnalyzer } from "../engines/repo-analyzer.js";
-import { SpecDatabase } from "../engines/spec-database.js";
 import { TemplateScaffolder } from "../engines/template-scaffolder.js";
 import {
 	type HarnessConfig,
@@ -309,62 +308,14 @@ export async function runInit(): Promise<void> {
 			"memory/spawn-log/*",
 			"!memory/spawn-log/.gitkeep",
 			"",
-			"# SQLite Local Database",
-			"!harness.db",
-			"harness.db-wal",
-			"harness.db-shm",
-			"",
 		].join("\n"),
 		"utf-8",
 	);
 
-	// 4b. Scaffold spec-query MCP Server Script (.harness/mcp/spec-query.ts) & roles.json
-	await fs.writeFile(
-		path.join(harnessDir, "mcp", "spec-query.ts"),
-		TemplateScaffolder.getSpecQueryMcpServer(),
-		"utf-8",
-	);
-
-	await fs.writeFile(
-		path.join(harnessDir, "mcp", "spec-query.json"),
-		JSON.stringify(
-			{
-				name: "spec-query",
-				type: "local",
-				command: ["bun", ".harness/mcp/spec-query.ts"],
-				env: {},
-			},
-			null,
-			2,
-		),
-		"utf-8",
-	);
-
+	// 4b. Scaffold roles.json (.harness/mcp/roles.json)
 	await fs.writeFile(
 		path.join(harnessDir, "mcp", "roles.json"),
 		TemplateScaffolder.getRolesJson(),
-		"utf-8",
-	);
-
-	// 4c. Scaffold Permanent Tooling Scripts (.harness/scripts/)
-	const scriptsDir = path.join(harnessDir, "scripts");
-	await fs.mkdir(scriptsDir, { recursive: true });
-
-	await fs.writeFile(
-		path.join(scriptsDir, "checkpoint-db.ts"),
-		TemplateScaffolder.getCheckpointDbScript(),
-		"utf-8",
-	);
-
-	await fs.writeFile(
-		path.join(scriptsDir, "seed-features.ts"),
-		TemplateScaffolder.getSeedFeaturesScript(),
-		"utf-8",
-	);
-
-	await fs.writeFile(
-		path.join(scriptsDir, "migrate-specs-to-db.ts"),
-		TemplateScaffolder.getMigrateSpecsScript(),
 		"utf-8",
 	);
 
@@ -482,31 +433,6 @@ export async function runInit(): Promise<void> {
 		JSON.stringify(validatedConfig, null, 2),
 		"utf-8",
 	);
-
-	// 11. Initialize SQLite Spec Database (.harness/harness.db)
-	const specDb = new SpecDatabase(harnessDir);
-	specDb.upsertFeature({
-		id: "feat-core",
-		name: `${validatedConfig.projectName} Core`,
-		slug: "core-architecture",
-		summary: `Core architectural foundation and shared utilities for ${validatedConfig.projectName}`,
-		status: "STABLE",
-	});
-
-	if (brownfieldResult?.detectedModules && brownfieldResult.detectedModules.length > 0) {
-		for (const modName of brownfieldResult.detectedModules) {
-			const modSlug = modName.toLowerCase().replace(/[^a-z0-9]/g, "-");
-			specDb.upsertFeature({
-				id: `feat-${modSlug}`,
-				name: `${modName.charAt(0).toUpperCase() + modName.slice(1)} Module`,
-				slug: modSlug,
-				summary: `Auto-discovered brownfield module '${modName}' requiring architectural review and test coverage.`,
-				status: "DRAFT",
-			});
-		}
-	}
-	await specDb.exportToMarkdown(harnessDir);
-	specDb.close();
 
 	// 11b. Seed Baseline Memory & Wiki Overview
 	if (isBrownfield) {

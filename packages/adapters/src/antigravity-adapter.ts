@@ -12,22 +12,6 @@ export class AntigravitySerializer {
 	): SerializedFile[] {
 		const mcpMap: Record<string, unknown> = {};
 
-		const pm = config.packageManager || "bun";
-		const [sqBin, ...sqArgs] =
-			pm === "bun"
-				? ["bun", ".harness/mcp/spec-query.ts"]
-				: pm === "pnpm"
-					? ["pnpm", "exec", "tsx", ".harness/mcp/spec-query.ts"]
-					: pm === "yarn"
-						? ["yarn", "dlx", "tsx", ".harness/mcp/spec-query.ts"]
-						: ["npx", "-y", "tsx", ".harness/mcp/spec-query.ts"];
-
-		// Always register native spec-query MCP server for database spec lookup
-		mcpMap["spec-query"] = {
-			command: sqBin,
-			args: sqArgs,
-		};
-
 		for (const server of mcpServers) {
 			if (server.type === "local" && server.command.length > 0) {
 				const [bin, ...args] = server.command;
@@ -119,7 +103,7 @@ export class AntigravitySerializer {
 			"",
 			"4. **Living Specs & Context Access:**",
 			"   - Primary master application summary: \`.harness/spec/app-summary.md\`.",
-			"   - System features and specs are queryable via the native \`spec-query\` MCP server.",
+			"   - Living behavioral specs and contracts (`*.contract.ts`, `*.spec.ts`, `*.spec.tsx`).",
 			"",
 			"## Technology & Stack Context",
 			`- **Primary Stack:** ${stackStr}`,
