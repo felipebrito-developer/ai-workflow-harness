@@ -14,7 +14,7 @@ export interface TaskAttemptState {
 
 export class CircuitBreaker {
 	private static getMemoryDir(): string {
-		return path.resolve(process.cwd(), ".harness/memory/attempts");
+		return path.resolve(process.cwd(), ".harness/state/attempts");
 	}
 
 	private static getStatePath(taskId: string): string {

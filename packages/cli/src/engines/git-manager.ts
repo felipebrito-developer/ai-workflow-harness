@@ -188,4 +188,40 @@ export class GitManager {
 			}
 		}
 	}
+	public static async revertUnallowedFiles(
+		violatingFiles: string[],
+	): Promise<void> {
+		for (const file of violatingFiles) {
+			try {
+				await execa("git", ["checkout", "HEAD", "--", file]);
+			} catch {
+				try {
+					await fs.unlink(file);
+				} catch {}
+			}
+		}
+	}
+
+	public static async createAtomicTaskCommit(
+		taskId: string,
+		allowedFiles: string[],
+		taskFilePath: string,
+	): Promise<void> {
+		const filesToStage = [...allowedFiles, taskFilePath].filter(Boolean);
+		if (filesToStage.length === 0) return;
+
+		for (const file of filesToStage) {
+			try {
+				await execa("git", ["add", file]);
+			} catch {}
+		}
+
+		try {
+			await execa("git", [
+				"commit",
+				"-m",
+				`feat(agent): verify & complete task ${taskId}`,
+			]);
+		} catch {}
+	}
 }

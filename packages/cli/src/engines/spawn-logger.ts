@@ -39,7 +39,7 @@ export interface SpawnReceipt {
 
 export class SpawnLogger {
 	private static getMemoryDir(): string {
-		return path.resolve(process.cwd(), ".harness/memory/attempts");
+		return path.resolve(process.cwd(), ".harness/state/attempts");
 	}
 
 	private static getStatePath(taskId: string): string {
@@ -47,7 +47,7 @@ export class SpawnLogger {
 	}
 
 	private static getSpawnLogDir(): string {
-		return path.resolve(process.cwd(), ".harness/memory/spawn-log");
+		return path.resolve(process.cwd(), ".harness/logs/spawn-log");
 	}
 
 	/**

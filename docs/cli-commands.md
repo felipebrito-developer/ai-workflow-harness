@@ -7,10 +7,11 @@ The `@harness/cli` binary (`harness`) provides a lean 2-command interface for pr
 ## 1. Project Scaffolding & Setup
 
 ### `harness init`
-Scaffolds directory structure, `.gitignore`, stack standards, tool adapters, and agent configurations.
+Scaffolds directory structure, `.gitignore`, stack standards, tool adapters, and agent configurations directly into the **Target Project Workspace** (`process.cwd()`).
 ```bash
 harness init
 ```
+- **Target Separation:** Never runs inside the `ai-workflow-harness` framework repository itself. It strictly scaffolds the downstream consumer project.
 - **Auto-Discovery:** Automatically inspects codebase structure, package manager (`bun`/`pnpm`/`npm`/`cargo`/`go`), and default commands.
 - **Model Presets:** Configures prompt caching and model routing for `@planner` and `@builder` agents.
 

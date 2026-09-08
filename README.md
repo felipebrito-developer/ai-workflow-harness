@@ -33,7 +33,16 @@ When AI agents work on complex software projects without guardrails, they encoun
 
 ---
 
-## 2. System Overview & Monorepo Structure
+## 2. Workspace Separation Principle
+
+> [!IMPORTANT]
+> **Framework vs Target Project Boundaries**
+> This repository (`ai-workflow-harness`) is **only** the meta-framework tooling and CLI source code. It is used to install and configure the workflow onto downstream projects.
+> The `harness init` command operates dynamically on the **Target Project Workspace** (`process.cwd()`). The `.harness/` folder and execution pipelines live exclusively in your target consumer projects, never within this framework repository itself.
+
+---
+
+## 3. System Overview & Monorepo Structure
 
 ```
 ai-workflow-harness/

@@ -4,7 +4,7 @@ import path from "node:path";
 import { CircuitBreaker } from "../src/engines/circuit-breaker.js";
 
 describe("CircuitBreaker Engine", () => {
-	const attemptsDir = path.join(process.cwd(), ".harness/memory/attempts");
+	const attemptsDir = path.join(process.cwd(), ".harness/state/attempts");
 
 	beforeAll(async () => {
 		await fs.mkdir(attemptsDir, { recursive: true });

@@ -276,10 +276,10 @@ export async function runInit(): Promise<void> {
 		path.join(harnessDir, "temp", "scripts"),
 		path.join(harnessDir, "temp", "assets"),
 		path.join(harnessDir, "temp", "artifacts"),
-		path.join(harnessDir, "memory", "discovery"),
-		path.join(harnessDir, "memory", "workday-log"),
-		path.join(harnessDir, "memory", "spawn-log"),
-		path.join(harnessDir, "memory", "attempts"),
+		path.join(harnessDir, "state", "discovery"),
+		path.join(harnessDir, "logs", "workday-log"),
+		path.join(harnessDir, "logs", "spawn-log"),
+		path.join(harnessDir, "state", "attempts"),
 	];
 
 	for (const dir of dirsToCreate) {
@@ -300,13 +300,13 @@ export async function runInit(): Promise<void> {
 			"temp/artifacts/*",
 			"!temp/*/.gitkeep",
 			"",
-			"# Ephemeral runtime memory",
-			"memory/attempts/*",
-			"!memory/attempts/.gitkeep",
+			"# Ephemeral runtime state",
+			"state/attempts/*",
+			"!state/attempts/.gitkeep",
 			"",
-			"# Memory spawn logs (generated)",
-			"memory/spawn-log/*",
-			"!memory/spawn-log/.gitkeep",
+			"# Logs",
+			"logs/spawn-log/*",
+			"!logs/spawn-log/.gitkeep",
 			"",
 		].join("\n"),
 		"utf-8",
@@ -434,11 +434,11 @@ export async function runInit(): Promise<void> {
 		"utf-8",
 	);
 
-	// 11b. Seed Baseline Memory & Wiki Overview
+	// 11b. Seed Baseline State & Wiki Overview
 	if (isBrownfield) {
 		const baselineMapPath = path.join(
 			harnessDir,
-			"memory",
+			"state",
 			"discovery",
 			"brownfield-baseline-map.md",
 		);

@@ -55,6 +55,11 @@ export async function runVerify(taskId: string): Promise<void> {
 			chalk.dim("  Task execution must be restricted to declared allowedFiles in task manifest."),
 		);
 
+		await GitManager.revertUnallowedFiles(boundaryCheck.violatingFiles);
+		console.log(
+			chalk.yellow(`  Reverted unallowed files: ${boundaryCheck.violatingFiles.join(", ")}\n`),
+		);
+
 		const { tripped, currentAttempts } = await CircuitBreaker.recordFailure(
 			taskId,
 			"boundary-check",
@@ -142,7 +147,7 @@ export async function runVerify(taskId: string): Promise<void> {
 				);
 				console.error(
 					chalk.yellow(
-						"Working tree rolled back to preflight state. Spawn receipt written to .harness/memory/spawn-log/.\n",
+						"Working tree rolled back to preflight state. Spawn receipt written to .harness/logs/spawn-log/.\n",
 					),
 				);
 			} else {
@@ -173,6 +178,7 @@ export async function runVerify(taskId: string): Promise<void> {
 	}
 
 	await CircuitBreaker.resetAttempts(taskId);
+	await GitManager.createAtomicTaskCommit(taskId, manifest.allowedFiles, taskFilePath);
 	console.log(
 		chalk.bold.green(
 			`\n✨ Task ${manifest.frontmatter.id} verified & marked DONE!\n`,

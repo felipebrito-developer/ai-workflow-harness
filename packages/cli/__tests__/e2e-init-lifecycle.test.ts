@@ -33,10 +33,10 @@ async function scaffoldDirs(
 		"temp/scripts",
 		"temp/assets",
 		"temp/artifacts",
-		"memory/discovery",
-		"memory/workday-log",
-		"memory/spawn-log",
-		"memory/attempts",
+		"state/discovery",
+		"logs/workday-log",
+		"logs/spawn-log",
+		"state/attempts",
 		"wiki",
 	];
 
@@ -261,10 +261,10 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 			"temp/scripts",
 			"temp/assets",
 			"temp/artifacts",
-			"memory/discovery",
-			"memory/workday-log",
-			"memory/spawn-log",
-			"memory/attempts",
+			"state/discovery",
+			"logs/workday-log",
+			"logs/spawn-log",
+			"state/attempts",
 			"wiki",
 		];
 
