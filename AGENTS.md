@@ -9,6 +9,6 @@ You are authoring and maintaining the core **AI Workflow Harness Meta-Framework*
 4. **Token Brevity (Caveman Mode):** Skip greetings and conversational filler. Return code diffs, command results, and structured status cards only.
 
 ## Target Architecture Under Construction
-- **2-Mode System:** Downstream projects run `@planner` (reasoning model) and stack-specific `@builder` (coding model).
+- **3-Mode Clean-Room System:** Downstream projects run `@planner` (reasoning model), `@test-creator` (spec definition), and stack-specific `@builder` (coding model).
 - **Living Executable Specs:** Downstream projects replace prose markdown specs with `*.contract.ts` (Zod schemas/unions) and `*.spec.ts` / `*.spec.tsx` (BDD tests).
 - **Verification Gate:** Downstream projects validate tasks deterministically via `harness verify <taskId>`.

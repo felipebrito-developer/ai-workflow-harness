@@ -1,6 +1,6 @@
-# 2-Tier XP Planning & Execution Pipeline
+# 3-Tier XP Planning & Execution Pipeline
 
-The AI Workflow Harness operates on a strict **2-Mode System Architecture**: `@planner` (Discovery, JIT Spec Slicing) and stack-specific `@builder` agents (`@web-builder`, `@mobile-builder`, `@backend-builder`).
+The AI Workflow Harness operates on a strict **3-Mode Clean-Room Architecture**: `@planner` (Discovery, Architectural Slicing, Task Creation), `@test-creator` (Drafting Specs/Tests), and stack-specific `@builder` agents (`@web-builder`, `@mobile-builder`, `@backend-builder`).
 
 No application source code may be written while acting as `@planner`.
 

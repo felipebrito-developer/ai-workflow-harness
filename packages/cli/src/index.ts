@@ -17,7 +17,7 @@ function validateTaskId(taskId: string): string {
 
 program
 	.name("harness")
-	.description("Lean 2-Mode AI Development Harness Meta-Framework")
+	.description("3-Mode Clean-Room AI Development Harness Meta-Framework")
 	.version("1.0.0");
 
 program

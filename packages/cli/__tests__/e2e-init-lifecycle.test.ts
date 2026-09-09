@@ -227,7 +227,7 @@ async function fullInit(
 // ============================================================================
 // TEST SUITE 1: Full React Web + OpenRouter + Orchestrated lifecycle
 // ============================================================================
-describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
+describe("E2E Init Lifecycle — React Web + OpenRouter + 3-Mode Clean-Room", () => {
 	const tmpDir = path.join(PROJECT_ROOT, `.tmp-e2e-lifecycle-${Date.now()}`);
 	const harnessDir = path.join(tmpDir, ".harness");
 	const answers = makeAnswers();
@@ -463,6 +463,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 			expect(content).toContain("e2e-test-app");
 			expect(content).toContain("Dynamically decided by the @planner");
 			expect(content).toContain("react-web");
+			expect(content).toContain("3-Mode Clean-Room Architecture");
 		});
 
 		it("should generate default OpenCode agent personas", async () => {
@@ -501,7 +502,9 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 				"utf-8",
 			);
 			expect(agentsMd).toContain("Antigravity Directive");
+			expect(agentsMd).toContain("3-Mode Clean-Room Architecture");
 			expect(agentsMd).toContain("@planner");
+			expect(agentsMd).toContain("@test-creator");
 			expect(agentsMd).toContain("@builder");
 		});
 	});

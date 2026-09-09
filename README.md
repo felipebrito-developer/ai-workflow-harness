@@ -48,7 +48,7 @@ When AI agents work on complex software projects without guardrails, they encoun
 ai-workflow-harness/
 ├── packages/
 │   ├── cli/          # @harness/cli: Gatekeeper CLI engine (init, verify), AST validator, CircuitBreaker
-│   ├── core-rules/   # @harness/core-rules: 2-mode planning pipeline & protocol guardrails
+│   ├── core-rules/   # @harness/core-rules: 3-Mode Clean-Room architecture guardrails
 │   ├── templates/    # @harness/templates: Canonical agent configs, standards, and skill catalog
 │   └── adapters/     # @harness/adapters: Transpiler adapters for OpenCode, Antigravity, and Cursor
 ├── docs/             # Comprehensive documentation modules & visual architecture diagrams
