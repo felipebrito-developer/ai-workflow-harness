@@ -537,7 +537,7 @@ export async function runInit(): Promise<void> {
 	console.log(chalk.dim(`- Compiled Adapters: ${compiledFiles.join(", ")}`));
 	console.log(
 		chalk.cyan(
-			"\nNext: Launch your AI tool or run `harness start <task-id>`.\n",
+			"\nNext: Launch your AI tool and run `/harness-preflight` to validate the architecture.\n",
 		),
 	);
 }
