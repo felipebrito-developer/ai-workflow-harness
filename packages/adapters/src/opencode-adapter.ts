@@ -66,51 +66,36 @@ export class OpenCodeSerializer {
 			? "openrouter/deepseek/deepseek-r1"
 			: config.provider.model;
 
-		const agentsMap: Record<string, unknown> = {
-			planner: {
-				mode: "primary",
-				model: reasoningModel,
-				description:
-					"Reasoning agent (@planner) for architecture planning, living spec slicing, and task manifest creation.",
-				permission: {
-					task: taskPermissions,
-					external_directory: "deny",
-				},
-			},
-		};
+		const agentsMap: Record<string, unknown> = {};
 
-		for (const s of stacks) {
-			if (s === "react-native") {
-				agentsMap["mobile-builder"] = {
-					mode: "subagent",
-					model: codingModel,
-					description:
-						"Mobile builder agent (@mobile-builder) executing React Native implementation tasks.",
-					permission: { edit: "allow", bash: "ask", external_directory: "deny" },
-				};
-			} else if (
-				s === "node" ||
-				s === "go" ||
-				s === "python" ||
-				s === "db-sql" ||
-				s === "db-nosql"
-			) {
-				agentsMap["backend-builder"] = {
-					mode: "subagent",
-					model: codingModel,
-					description:
-						"Backend builder agent (@backend-builder) executing API and domain implementation tasks.",
-					permission: { edit: "allow", bash: "ask", external_directory: "deny" },
-				};
-			} else if (s === "react-web") {
-				agentsMap["web-builder"] = {
-					mode: "subagent",
-					model: codingModel,
-					description:
-						"Web builder agent (@web-builder) executing React web frontend implementation tasks.",
-					permission: { edit: "allow", bash: "ask", external_directory: "deny" },
+		for (const agent of customAgents) {
+			let agentModel = agent.provider.model;
+			if (agent.provider.type === "openrouter" && !agentModel.startsWith("openrouter/")) {
+				agentModel = `openrouter/${agentModel}`;
+			}
+
+			const agentConfig: any = {
+				mode: agent.mode,
+				model: agentModel,
+				description: agent.description,
+				permission: {
+					edit: agent.permissions.edit,
+					bash: agent.permissions.bash,
+					task: agent.name === "planner" ? taskPermissions : agent.permissions.task,
+					external_directory: agent.permissions.externalDirectory,
+				},
+			};
+
+			if (agent.name === "planner") {
+				agentConfig.actions = {
+					"harness-preflight": {
+						description: "Validate Harness 3-Mode Architecture and auto-migrate legacy configs.",
+						instruction: "Execute the preflight validation following the steps in .harness/skills/core/skill-preflight.md"
+					}
 				};
 			}
+
+			agentsMap[agent.name] = agentConfig;
 		}
 
 		const opencodeConfig: Record<string, unknown> = {

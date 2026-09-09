@@ -44,12 +44,20 @@ export class AntigravitySerializer {
 			const isSubagent = agent.mode === "subagent";
 			const antigravityModel = isSubagent ? "gemini-2.5-flash" : "gemini-2.5-pro";
 
-			agents[agent.name] = {
+			const agentConfig: any = {
 				description: agent.description,
 				mode: agent.mode,
 				model: antigravityModel,
 				systemPrompt: agent.systemPrompt,
 			};
+
+			if (agent.name === "planner") {
+				agentConfig.actions = {
+					"/harness-preflight": "Run .harness/skills/core/skill-preflight.md to validate the architecture."
+				};
+			}
+
+			agents[agent.name] = agentConfig;
 		}
 
 		const payload = {

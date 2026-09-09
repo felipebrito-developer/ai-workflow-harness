@@ -12,3 +12,4 @@ You are authoring and maintaining the core **AI Workflow Harness Meta-Framework*
 - **3-Mode Clean-Room System:** Downstream projects run `@planner` (reasoning model), `@test-creator` (spec definition), and stack-specific `@builder` (coding model).
 - **Living Executable Specs:** Downstream projects replace prose markdown specs with `*.contract.ts` (Zod schemas/unions) and `*.spec.ts` / `*.spec.tsx` (BDD tests).
 - **Verification Gate:** Downstream projects validate tasks deterministically via `harness verify <taskId>`.
+5. **IDE Serialization Rule:** Whenever you add a new skill or slash command to the AI Workflow Harness, you MUST also explicitly serialize that action into the IDE configuration adapters (`opencode-adapter.ts` and `antigravity-adapter.ts`). Skills are not automatically surfaced as UI actions in IDEs unless explicitly registered in their respective JSON schemas.

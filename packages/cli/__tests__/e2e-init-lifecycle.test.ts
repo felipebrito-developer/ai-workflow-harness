@@ -448,7 +448,10 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + 3-Mode Clean-Room", ()
 			expect(json.instructions).toContain(".harness/standards/**/*.md");
 			expect(json.instructions).toContain(".harness/skills/**/*.md");
 			expect(json.agent).toHaveProperty("planner");
+			expect(json.agent).toHaveProperty("test-creator");
 			expect(json.agent.planner.mode).toBe("primary");
+			expect(json.agent.planner).toHaveProperty("actions");
+			expect(json.agent.planner.actions).toHaveProperty("harness-preflight");
 
 			// Provider with setCacheKey
 			expect(json.provider).toHaveProperty("openrouter");
@@ -499,6 +502,10 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + 3-Mode Clean-Room", ()
 			expect(json.project).toBe("e2e-test-app");
 			expect(Array.isArray(json.directives)).toBe(true);
 			expect(json.directives.length).toBeGreaterThanOrEqual(4);
+			expect(json.agents).toHaveProperty("planner");
+			expect(json.agents).toHaveProperty("test-creator");
+			expect(json.agents.planner).toHaveProperty("actions");
+			expect(json.agents.planner.actions).toHaveProperty("/harness-preflight");
 
 			const agentsMd = await fs.readFile(
 				path.join(tmpDir, "AGENTS.md"),
