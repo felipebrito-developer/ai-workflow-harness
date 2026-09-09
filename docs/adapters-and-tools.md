@@ -21,13 +21,14 @@ The Harness framework is natively tool-agnostic, transpiling canonical agent con
 
 ---
 
-## 2. 2-Mode Agent Role Mapping & Model Allocation
+## 2. 3-Mode Agent Role Mapping & Model Allocation
 
 OpenRouter models use standard `openrouter/<vendor>/<model-id>` namespacing with prompt caching enabled:
 
 | Role | Mode | Description / Model Strategy |
 | :--- | :--- | :--- |
 | **@planner** | Primary Architect | Architecture planning, living spec slicing (`openrouter/deepseek/deepseek-r1` or `claude-3.5-sonnet`). |
+| **@test-creator** | Spec Author | Cryptographically locked TDD Acceptance Criteria generation (`openrouter/anthropic/claude-3.5-sonnet`). |
 | **@web-builder** | Subagent Executor | React web frontend TDD implementation (`openrouter/qwen/qwen-2.5-coder-32b-instruct`). |
 | **@mobile-builder** | Subagent Executor | React Native mobile TDD implementation (`openrouter/qwen/qwen-2.5-coder-32b-instruct`). |
 | **@backend-builder** | Subagent Executor | API & database TDD implementation (`openrouter/qwen/qwen-2.5-coder-32b-instruct`). |

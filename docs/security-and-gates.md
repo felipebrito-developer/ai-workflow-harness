@@ -4,7 +4,7 @@ The Harness enforces strict, unbypassable security gates and verification rules 
 
 ---
 
-## 1. 3-Tier Security Scanner (`SecurityScanner`)
+## 1. 4-Tier Security Scanner (`SecurityScanner`)
 
 Integrated into `harness audit`, `harness preflight`, and `harness verify`:
 
@@ -16,6 +16,8 @@ Integrated into `harness audit`, `harness preflight`, and `harness verify`:
    - Reports high-severity package vulnerabilities before deployment.
 3. **File Boundary Interceptor:**
    - Ensures agents edit ONLY files explicitly listed under `Allowed File Boundaries` in `task-XXX.md`.
+4. **Cryptographic Anti-Tampering Check:**
+   - Mathematically verifies that the builder agent has not tampered with the read-only Acceptance Criteria spec (`*.spec.ts`) by asserting its SHA-256 hash matches the `specChecksum` in the task manifest.
 
 ---
 
