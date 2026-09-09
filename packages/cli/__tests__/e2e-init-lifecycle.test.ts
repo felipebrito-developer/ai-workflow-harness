@@ -277,6 +277,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + 3-Mode Clean-Room", ()
 	describe("B. Core Agent JSON Files", () => {
 		const agentNames = [
 			"planner",
+			"test-creator",
 		];
 
 		for (const agentName of agentNames) {
@@ -310,6 +311,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + 3-Mode Clean-Room", ()
 	describe("C. Agent Model Allocation", () => {
 		const expectedModels: Record<string, string> = {
 			planner: "openrouter/deepseek/deepseek-r1",
+			"test-creator": "openrouter/deepseek/deepseek-r1",
 		};
 
 		it("should assign correct models for complex-efficient preset", async () => {
