@@ -97,8 +97,6 @@ const makeAnswers = (
 	providerType: "openrouter",
 	modelPreset: "complex-efficient",
 	packageManager: "bun",
-	cmdTest: "bun test",
-	cmdLint: "bunx @biomejs/biome check .",
 	...overrides,
 });
 
@@ -121,7 +119,6 @@ function buildConfig(answers: InitAnswers): HarnessConfig {
 		},
 		packageManager: answers.packageManager || "bun",
 		circuitBreakerLimit: 3,
-		commands: { test: answers.cmdTest, lint: answers.cmdLint },
 	});
 }
 
@@ -464,8 +461,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + Lean 2-Mode", () => {
 				"utf-8",
 			);
 			expect(content).toContain("e2e-test-app");
-			expect(content).toContain("bun test");
-			expect(content).toContain("bunx @biomejs/biome check .");
+			expect(content).toContain("Dynamically decided by the @planner");
 			expect(content).toContain("react-web");
 		});
 

@@ -288,8 +288,7 @@ export class OpenCodeSerializer {
 			"   - Run `harness verify <taskId>` to validate before marking task done.",
 			"",
 			"4. **Deterministic Commands:**",
-			`   - Test: \`${config.commands.test}\``,
-			`   - Lint: \`${config.commands.lint}\``,
+			"   - Test and Lint commands: Dynamically decided by the @planner based on the target stack.",
 		].join("\n");
 	}
 }

@@ -11,7 +11,6 @@ describe("Core Zod Schemas Validation Suite", () => {
 			stack: ["node"],
 			adapters: ["opencode"],
 			provider: { model: "claude-3.5-sonnet" },
-			commands: { test: "bun test", lint: "bun run lint" },
 		});
 		expect(config.version).toBe("1.0.0");
 		expect(config.circuitBreakerLimit).toBe(3);

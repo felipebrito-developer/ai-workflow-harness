@@ -39,8 +39,6 @@ export interface InitAnswers {
 	modelPreset: ModelPresetOption;
 	customDefaultModel?: string;
 	packageManager?: "bun" | "pnpm" | "yarn" | "npm" | "cargo" | "go";
-	cmdTest: string;
-	cmdLint: string;
 }
 
 export async function runInit(): Promise<void> {
@@ -209,6 +207,10 @@ export async function runInit(): Promise<void> {
 				{ name: "openai", message: "Direct OpenAI" },
 				{ name: "custom", message: "Custom / Local Endpoint" },
 			],
+			skip() {
+				// @ts-ignore
+				return this.state.answers.adapters?.length === 1 && this.state.answers.adapters[0] === "antigravity";
+			},
 		},
 		{
 			type: "select",
@@ -238,6 +240,10 @@ export async function runInit(): Promise<void> {
 					message: "Custom (Specify a single model ID for all agents)",
 				},
 			],
+			skip() {
+				// @ts-ignore
+				return this.state.answers.adapters?.length === 1 && this.state.answers.adapters[0] === "antigravity";
+			},
 		},
 		{
 			type: "input",
@@ -246,20 +252,8 @@ export async function runInit(): Promise<void> {
 			initial: "anthropic/claude-3.5-sonnet",
 			skip() {
 				// @ts-ignore
-				return this.state.answers.modelPreset !== "custom";
+				return this.state.answers.modelPreset !== "custom" || (this.state.answers.adapters?.length === 1 && this.state.answers.adapters[0] === "antigravity");
 			},
-		},
-		{
-			type: "input",
-			name: "cmdTest",
-			message: "Verification Test Command:",
-			initial: brownfieldResult?.testCmd || "bun test",
-		},
-		{
-			type: "input",
-			name: "cmdLint",
-			message: "Verification Lint Command:",
-			initial: brownfieldResult?.lintCmd || "bunx @biomejs/biome check .",
 		},
 	];
 
@@ -277,14 +271,10 @@ export async function runInit(): Promise<void> {
 		packageManager: answers.packageManager || brownfieldResult?.packageManager || "bun",
 		adapters: answers.adapters,
 		provider: {
-			model: primaryModel,
+			model: primaryModel || "gemini-2.5-pro",
 			promptCaching: answers.enableTokenOptimizations,
 		},
 		circuitBreakerLimit: 3,
-		commands: {
-			test: answers.cmdTest,
-			lint: answers.cmdLint,
-		},
 	};
 
 	const validatedConfig: HarnessConfig =
@@ -467,8 +457,8 @@ export async function runInit(): Promise<void> {
 				`# Discovery Map: ${validatedConfig.projectName} (Brownfield Baseline)`,
 				"",
 				`> **Auto-Discovered Stack:** ${validatedConfig.stack.join(", ")}`,
-				`> **Test Command:** \`${validatedConfig.commands.test}\``,
-				`> **Lint Command:** \`${validatedConfig.commands.lint}\``,
+				`> **Test Command:** Dynamically resolved per-task`,
+				`> **Lint Command:** Dynamically resolved per-task`,
 				"",
 				"## Destination",
 				`Establish full 5-phase harness discipline and test coverage for existing codebase ${validatedConfig.projectName}.`,

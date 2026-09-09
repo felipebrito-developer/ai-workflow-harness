@@ -21,7 +21,6 @@ describe("Adapters Serializers", () => {
 			promptCaching: true,
 		},
 		circuitBreakerLimit: 3,
-		commands: { test: "bun test", lint: "bun run lint" },
 	};
 
 	it("should serialize Antigravity config with directives and AGENTS.md", () => {

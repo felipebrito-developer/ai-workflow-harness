@@ -112,8 +112,7 @@ export class AntigravitySerializer {
 			"## Technology & Stack Context",
 			`- **Primary Stack:** ${stackStr}`,
 			`- **Package Manager:** ${config.packageManager}`,
-			`- **Test Command:** \`${config.commands.test}\``,
-			`- **Lint Command:** \`${config.commands.lint}\``,
+			`- **Test and Lint Commands:** Dynamically decided by the @planner based on the target stack.`,
 		].join("\n");
 	}
 }

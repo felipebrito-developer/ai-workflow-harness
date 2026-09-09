@@ -13,10 +13,6 @@ export const HarnessConfigSchema = z.object({
 		promptCaching: z.boolean().default(true),
 	}),
 	circuitBreakerLimit: z.number().int().positive().max(5).default(3),
-	commands: z.object({
-		test: z.string().min(1),
-		lint: z.string().min(1),
-	}),
 });
 
 export type HarnessConfig = z.infer<typeof HarnessConfigSchema>;
