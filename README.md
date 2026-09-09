@@ -8,7 +8,7 @@ A standardized, token-efficient, tool-agnostic AI development meta-framework for
 
 For detailed architectural deep dives, command guides, and framework specifications, see:
 
-- 🏛️ **[System Architecture & Design](file:///home/chu/AI-project/ai-workflow-harness/docs/HARNESS_ARCHITECTURE_HANDOVER.md)** — Core operating philosophy, 3-agent Dual-Role Separation, and living specs.
+- 🏛️ **[System Architecture & Design](file:///home/chu/AI-project/ai-workflow-harness/docs/architecture.md)** — Core operating philosophy, 3-agent Dual-Role Separation, and living specs.
 - ⚡ **[CLI Command Reference](file:///home/chu/AI-project/ai-workflow-harness/docs/cli-commands.md)** — Lean CLI entrypoint guide for `init` and `verify <taskId>`.
 - 🔄 **[Planning & Execution Diagrams](file:///home/chu/AI-project/ai-workflow-harness/docs/diagrams/01-end-to-end-lifecycle.md)** — Lifecycle maps, JIT spec slicing, and verification gates.
 - 🔒 **[Security & Verification Gates](file:///home/chu/AI-project/ai-workflow-harness/docs/security-and-gates.md)** — Boundary enforcement, ErrorSanitizer cards, AST validation, and 3-strike circuit breaker rollback.
