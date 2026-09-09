@@ -75,31 +75,59 @@ export async function runInit(): Promise<void> {
 		}
 	}
 
-	// 2. Conflict Audit
-	const conflicts: string[] = [];
-	for (const file of ["opencode.json", "antigravity.json", ".cursorrules"]) {
+	// 2. Legacy Migration Audit
+	const legacyItems = [
+		".harness",
+		".antigravity",
+		".opencode",
+		"AGENTS.md",
+		"antigravity.json",
+		"opencode.json",
+		"opencode.md",
+		".cursorrules",
+	];
+	const foundLegacy: string[] = [];
+	for (const item of legacyItems) {
 		try {
-			await fs.access(path.join(cwd, file));
-			conflicts.push(file);
+			await fs.access(path.join(cwd, item));
+			foundLegacy.push(item);
 		} catch {}
 	}
 
-	if (conflicts.length > 0) {
+	let legacyBackupDir = "";
+	if (foundLegacy.length > 0) {
 		console.log(
 			chalk.yellow(
-				`⚠️ Found existing tool configurations: ${conflicts.join(", ")}`,
+				`⚠️ Found existing harness configurations: ${foundLegacy.join(", ")}`,
 			),
 		);
-		const { proceed } = await enquirer.prompt<{ proceed: boolean }>({
+		const { doMigration } = await enquirer.prompt<{ doMigration: boolean }>({
 			type: "confirm",
-			name: "proceed",
-			message: "Harness will wrap these configurations. Proceed?",
+			name: "doMigration",
+			message: "Backup these files and generate an AI migration task?",
 			initial: true,
 		});
-		if (!proceed) {
-			console.log(chalk.red("Initialization aborted."));
+		if (!doMigration) {
+			console.log(
+				chalk.red("Initialization aborted. Please clean the directory manually."),
+			);
 			return;
 		}
+
+		legacyBackupDir = `.harness-legacy-${Date.now()}`;
+		const backupPath = path.join(cwd, legacyBackupDir);
+		await fs.mkdir(backupPath, { recursive: true });
+
+		for (const item of foundLegacy) {
+			try {
+				await fs.rename(path.join(cwd, item), path.join(backupPath, item));
+			} catch (err: any) {
+				console.log(chalk.dim(`Failed to move ${item}: ${err.message}`));
+			}
+		}
+		console.log(
+			chalk.green(`✔ Moved legacy configurations to ${legacyBackupDir}/`),
+		);
 	}
 
 	// 2. Interactive Setup Prompts
@@ -273,9 +301,6 @@ export async function runInit(): Promise<void> {
 		path.join(harnessDir, "skills", "testing"),
 		path.join(harnessDir, "mcp"),
 		path.join(harnessDir, "UI", "details"),
-		path.join(harnessDir, "temp", "scripts"),
-		path.join(harnessDir, "temp", "assets"),
-		path.join(harnessDir, "temp", "artifacts"),
 		path.join(harnessDir, "state", "discovery"),
 		path.join(harnessDir, "logs", "workday-log"),
 		path.join(harnessDir, "logs", "spawn-log"),
@@ -294,12 +319,6 @@ export async function runInit(): Promise<void> {
 	await fs.writeFile(
 		path.join(harnessDir, ".gitignore"),
 		[
-			"# Ephemeral scratchpad",
-			"temp/scripts/*",
-			"temp/assets/*",
-			"temp/artifacts/*",
-			"!temp/*/.gitkeep",
-			"",
 			"# Ephemeral runtime state",
 			"state/attempts/*",
 			"!state/attempts/.gitkeep",
@@ -354,7 +373,7 @@ export async function runInit(): Promise<void> {
 
 		const coreSkills = TemplateScaffolder.getCoreSkills();
 		const stackSkills = TemplateScaffolder.getStackSkills();
-		const testingSkills = TemplateScaffolder.getTestingSkills();
+		const testingSkills = TemplateScaffolder.getTestingSkills(answers.stack);
 
 		for (const [file, content] of Object.entries(coreSkills)) {
 			await fs.writeFile(path.join(skillsBase, "core", file), content, "utf-8");
@@ -478,9 +497,51 @@ export async function runInit(): Promise<void> {
 	// 13. Transpile Adapters
 	const compiledFiles = await AdapterCompiler.compileAll(validatedConfig, cwd);
 
+	// 14. Generate Legacy Migration Task
+	if (legacyBackupDir) {
+		const taskContent = [
+			"---",
+			'id: "task-migration"',
+			'status: "TODO"',
+			"---",
+			"# Migrate Legacy Harness Configuration",
+			"",
+			`A legacy harness configuration was detected at \`${legacyBackupDir}\`.`,
+			"",
+			"Your task is to:",
+			`1. Analyze the contents of \`${legacyBackupDir}\` (including any legacy \`.harness/agents/\`, \`.harness/mcp/\`, \`AGENTS.md\`, \`opencode.json\`, etc.).`,
+			"2. Evaluate if there are any important custom configurations, MCP servers, system prompt overrides, or agent definitions that should be preserved.",
+			"3. Merge any critical definitions into the new fresh `.harness/` setup and the root configurations.",
+			`4. Delete the \`${legacyBackupDir}\` folder completely once migration is done and verified.`,
+			"",
+			"## Acceptance Criteria",
+			"- [ ] Legacy custom agents and prompts evaluated and migrated if necessary.",
+			"- [ ] Legacy MCP servers evaluated and migrated if necessary.",
+			"- [ ] Legacy root configurations (e.g. `opencode.json`, `antigravity.json`) merged if necessary.",
+			`- [ ] \`${legacyBackupDir}\` directory completely removed.`,
+			"",
+			"```bash",
+			"# Verification Command",
+			"harness verify task-migration",
+			"```",
+			"",
+		].join("\n");
+
+		await fs.writeFile(
+			path.join(harnessDir, "tasks", "task-migration.md"),
+			taskContent,
+			"utf-8",
+		);
+		console.log(
+			chalk.magenta(
+				`\n📝 Generated legacy migration task: .harness/tasks/task-migration.md`,
+			),
+		);
+	}
+
 	console.log(chalk.green("\n✨ AI Harness initialized successfully!"));
 	console.log(
-		chalk.dim("- Directory: .harness/ (with agents/, skills/, UI/, temp/)"),
+		chalk.dim("- Directory: .harness/ (with agents/, skills/, UI/, state/)"),
 	);
 	console.log(chalk.dim(`- Selected Strategy: ${answers.modelPreset}`));
 	console.log(chalk.dim(`- Compiled Adapters: ${compiledFiles.join(", ")}`));

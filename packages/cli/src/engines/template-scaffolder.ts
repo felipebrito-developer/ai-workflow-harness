@@ -124,15 +124,114 @@ export class TemplateScaffolder {
 		};
 	}
 
-	public static getTestingSkills(): Record<string, string> {
+	public static getTestingSkills(stacks: string[] = []): Record<string, string> {
+		const isGo = stacks.includes("go");
+		const isPython = stacks.includes("python");
+		
+		let testExample = "";
+		if (isGo) {
+			testExample = [
+				"```go",
+				'import (',
+				'	"testing"',
+				'	"github.com/stretchr/testify/assert"',
+				')',
+				"",
+				'func TestProcessTask(t *testing.T) {',
+				'	t.Run("SAD PATH: should fail on empty payload", func(t *testing.T) {',
+				'		// Arrange',
+				'		payload := map[string]string{}',
+				'		',
+				'		// Act',
+				'		_, err := ProcessTask(payload)',
+				'		',
+				'		// Assert',
+				'		assert.Error(t, err)',
+				'		assert.Equal(t, "Payload ID is required", err.Error())',
+				'	})',
+				"",
+				'	t.Run("HAPPY PATH: should return deterministic output", func(t *testing.T) {',
+				'		// Arrange',
+				'		payload := map[string]string{"id": "123", "raw": "data"}',
+				'		expected := map[string]string{"processedId": "123", "status": "SUCCESS"}',
+				'		',
+				'		// Act',
+				'		result, err := ProcessTask(payload)',
+				'		',
+				'		// Assert - assert exact match',
+				'		assert.NoError(t, err)',
+				'		assert.Equal(t, expected, result)',
+				'	})',
+				'}',
+				"```"
+			].join("\n");
+		} else if (isPython) {
+			testExample = [
+				"```python",
+				'import pytest',
+				'from task_processor import process_task',
+				"",
+				'def test_process_task_sad_path():',
+				'    # Arrange',
+				'    payload = {}',
+				'    ',
+				'    # Act & Assert',
+				'    with pytest.raises(ValueError, match="Payload ID is required"):',
+				'        process_task(payload)',
+				"",
+				'def test_process_task_happy_path():',
+				'    # Arrange',
+				'    payload = {"id": "123", "raw": "data"}',
+				'    expected = {"processedId": "123", "status": "SUCCESS"}',
+				'    ',
+				'    # Act',
+				'    result = process_task(payload)',
+				'    ',
+				'    # Assert - exact match',
+				'    assert result == expected',
+				"```"
+			].join("\n");
+		} else {
+			testExample = [
+				"```typescript",
+				'import { describe, it, expect, mock } from "bun:test";',
+				"// 1. Target imports",
+				'import { processTask } from "../src/task-processor.js";',
+				"",
+				'describe("Domain Logic: processTask", () => {',
+				'  it("SAD PATH: should throw specific validation error on empty payload", () => {',
+				"    // Arrange (Given)",
+				"    const payload = {};",
+				"    ",
+				"    // Act & Assert (When / Then)",
+				'    expect(() => processTask(payload)).toThrow("Payload ID is required");',
+				"  });",
+				"",
+				'  it("HAPPY PATH: should transform and return deterministic output", () => {',
+				"    // Arrange (Given)",
+				'    const payload = { id: "123", raw: "data" };',
+				'    const expected = { processedId: "123", status: "SUCCESS" };',
+				"    ",
+				"    // Act (When)",
+				"    const result = processTask(payload);",
+				"    ",
+				"    // Assert (Then) - NEVER use toBeTruthy(), assert exact structural match",
+				"    expect(result).toEqual(expected);",
+				"  });",
+				"});",
+				"```"
+			].join("\n");
+		}
+
 		return {
 			"skill-executable-specs.md": [
 				"# Skill: Living Executable Specifications",
 				"",
 				"## Objective",
-				"Author executable TypeScript contracts (*.contract.ts) and component specifications (*.spec.ts, *.spec.tsx) that serve as living system documentation.",
+				"Author executable TypeScript contracts (*.contract.ts) and component specifications (*.spec.ts, *.spec.tsx) that serve as living system documentation. You operate as the `@test-creator`.",
 				"",
-				"## Rules & Invariants",
+				"## Rules & Invariants (Clean-Room Pattern)",
+				"- **Cryptographic Lock:** Tests you write are cryptographically locked in the task manifest. They are read-only for `@builder` agents.",
 				"- Define type contracts using strict Zod schemas or TypeScript interfaces.",
 				"- Do NOT write prose markdown specs when executable contracts can be written.",
 				"- Keep spec files colocated or linked from feature manifests.",
@@ -153,13 +252,23 @@ export class TemplateScaffolder {
 				"# Skill: Test-Driven Development (TDD) Assertions",
 				"",
 				"## Objective & Discipline",
-				"Author comprehensive, failing test suites BEFORE any implementation code begins (RED phase of TDD).",
+				"Execute tasks using test-driven development. You operate as the `@builder`.",
 				"",
-				"## Mandatory Assertion Rules",
+				"## Clean-Room Workflow",
+				"1. **Read-Only Acceptance Specs:** The `*.spec.ts` files provided by `@test-creator` are cryptographically locked. You CANNOT modify them.",
+				"2. **Mutation Sanity Check:** Ensure the provided tests fail on the empty codebase BEFORE writing implementation.",
+				"3. **Delta Blocker Exemption:** If a test is fundamentally flawed, DO NOT hack the test. Annotate the `blockers` array in the task manifest and run `harness verify --allow-blocked`.",
+				"",
+				"## Mandatory Builder Assertion Rules (For internal *.unit.ts)",
 				"1. **Happy Path:** Assert specific expected return values, payload structures, and side effects.",
 				"2. **Sad Path FIRST:** Error handling is more important than happy path. Test invalid input rejection using specific error matchers (e.g. `toThrow()`).",
 				"3. **No Soft Assertions:** Never use `toBeTruthy()` or `toBeDefined()` alone — assert exact values.",
 				"4. **Isolation:** Mock external dependencies (filesystem, network, DB) — tests must run deterministically in isolated sandbox.",
+				"",
+				"## Standard Test Template Structure",
+				"Always structure tests using the deterministic Arrange/Act/Assert (Given/When/Then) pattern.",
+				"",
+				testExample,
 			].join("\n"),
 
 			"skill-zero-noise-reporter.md": [
@@ -174,18 +283,19 @@ export class TemplateScaffolder {
 	public static getPipelineStandards(): Record<string, string> {
 		return {
 			"summary.md": [
-				"# Lean 2-Mode AI Workflow Standards",
+				"# Lean 3-Mode AI Workflow Standards",
 				"",
-				"> **Living Specs, Boundary-Isolated Tasks & Deterministic Gates**",
+				"> **Clean-Room Specs, Boundary-Isolated Tasks & Deterministic Gates**",
 				"",
 				"## Operating Modes",
-				"- **@planner:** Reasoning agent for architectural planning, living spec slicing (*.contract.ts, *.spec.ts, *.spec.tsx), and task manifest creation (.harness/tasks/task-XXX.md). Never writes application code.",
-				"- **@builder:** Stack-specific TDD executor (e.g. @web-builder, @mobile-builder, @backend-builder). Implements tasks test-first (RED -> GREEN -> REFACTOR) strictly within allowed file boundaries.",
+				"- **@planner:** Reasoning agent for architectural planning, living spec slicing, and task manifest creation.",
+				"- **@test-creator:** Generates read-only Acceptance Specs (`*.spec.ts`) that are cryptographically locked by the framework.",
+				"- **@builder:** Stack-specific TDD executor. Implements tasks strictly within allowed file boundaries without modifying the locked spec.",
 				"",
 				"## Execution Invariants",
-				"1. **Atomic Tasks:** Max 2 implementation code files + 1 test file (max 3 total) per task.",
-				"2. **Living Executable Specs:** Contract & spec definitions replace prose design documents.",
-				"3. **Deterministic Verification Gate:** Run `harness verify <taskId>` to enforce boundaries, run tests, and trigger circuit breaker rollbacks on failures.",
+				"1. **Clean-Room Specification:** `@builder` cannot modify the acceptance tests written by `@test-creator`. Blocked tests must be flagged via `blockers` in the task manifest.",
+				"2. **Atomic Tasks:** Max 2 implementation code files + 1 test file (max 3 total) per task.",
+				"3. **Deterministic Verification Gate:** Run `harness verify <taskId>` to enforce boundaries, validate cryptographic hashes, run tests, and trigger circuit breaker rollbacks on failures.",
 			].join("\n"),
 		};
 	}
@@ -213,6 +323,11 @@ export class TemplateScaffolder {
 					role: "planner",
 					allowedTools: ["*"],
 					allowedCategories: ["technical", "pipeline", "business", "tasks"],
+				},
+				"test-creator": {
+					role: "test-creator",
+					allowedTools: ["*"],
+					allowedCategories: ["tasks", "testing"],
 				},
 				builder: {
 					role: "builder",

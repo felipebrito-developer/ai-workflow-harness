@@ -13,6 +13,7 @@ Designed for rapid iteration, continuous delivery, and high velocity:
    - Interactive 3-question baseline verification prompt during `harness analyze`.
 2. **Pass 2: Technical Execution & Micro-Tasks:**
    - Schema contracts and boundary-enforced task manifest generation (`task-XXX.md`).
+   - **Clean-Room Specification:** `@test-creator` produces cryptographically locked `*.spec.ts` files that `@builder` must implement without modifying.
 
 ---
 
@@ -26,10 +27,10 @@ Designed for rapid iteration, continuous delivery, and high velocity:
 
 ---
 
-## 4. The Delta Protocol (Scope Escalation)
+## 4. The Delta Protocol (Scope Escalation & Blockers)
 
 When new requirements or edge cases are discovered mid-task:
 
 - **Tier 1 (Patch):** Minor tweak within file boundaries. Append acceptance criteria to task manifest.
-- **Tier 2 (Delta):** New files or schema changes needed. Run `harness checkpoint <taskId>` to stash current progress, generate `GAP-XXX.md` spec, and create sub-task `task-XXX.1.md`.
+- **Tier 2 (Dependency Blocker):** Missing architectural support or flawed spec. The `@builder` annotates the task manifest with `blockers` and runs `harness verify --allow-blocked` to send it back to the `@planner` (`NEEDS_PLANNER_REVIEW`).
 - **Tier 3 (Pivot):** Flawed architecture. Halt task, rollback branch, and return to Phase 1 grill.

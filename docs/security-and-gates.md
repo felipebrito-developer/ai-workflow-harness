@@ -30,5 +30,5 @@ Before code execution:
 ## 3. Circuit Breaker & Automatic Rollback (`CircuitBreaker`)
 
 To protect LLM context windows from loop exhaustion:
-- Tracks consecutive verification test failures in `.harness/memory/attempts/<taskId>.json`.
-- **3-Strike Circuit Tripped:** After 3 consecutive failed verification attempts, automatically rolls back working tree changes matching task boundaries and writes a `BLOCKED` receipt to `.harness/memory/spawn-log/circuit-breaker-<taskId>.md`.
+- Tracks consecutive verification test failures in `.harness/state/attempts/<taskId>.json`.
+- **3-Strike Circuit Tripped:** After 3 consecutive failed verification attempts, automatically rolls back working tree changes matching task boundaries and writes a `BLOCKED` receipt to `.harness/logs/spawn-log/circuit-breaker-<taskId>.md`.

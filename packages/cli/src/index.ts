@@ -30,6 +30,7 @@ program
 	.description(
 		"Verify task file boundaries, execute verification test suite, and update status",
 	)
-	.action((taskId) => runVerify(validateTaskId(taskId)));
+	.option("--allow-blocked", "Allow partial verification for blocked tasks")
+	.action((taskId, options) => runVerify(validateTaskId(taskId), options));
 
 program.parse(process.argv);

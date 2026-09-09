@@ -3,36 +3,58 @@ name: tdd
 description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
 ---
 
-# Test-Driven Development
+# Test-Driven Development (Clean-Room Specification Pattern)
 
-TDD is the red → green loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle: consult them before and during the loop, not after.
+This framework operates on a **Clean-Room Specification Pattern** (Dual-Role Separation of Concerns). We mathematically eliminate the primary risk of autonomous agent workflows (test tampering and false positives) by splitting test generation and implementation across two distinct roles.
 
-When exploring the codebase, read `CONTEXT.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
+## The Test Pattern Matrix
 
-## What a good test is
+To implement this workflow effectively, every agent must respect these four core invariants:
 
-Tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't. A good test reads like a specification: "user can checkout with valid cart" tells you exactly what capability exists, and it survives refactors because it doesn't care about internal structure.
+| Pattern | Mechanism |
+| :--- | :--- |
+| **1. Cryptographic Spec Lock** | Checksum hash of `*.spec.ts` stored in task manifest; `verify` rejects if test changed. |
+| **2. Dual-Tier Test Scopes** | - **Acceptance Spec (`*.spec.ts`)**: Read-Only (Owned by `@test-creator`)<br>- **Unit Tests (`*.unit.ts`)**: Mutable (Owned by `@builder`) |
+| **3. Mutation Sanity Check** | Pre-verify step: run test against empty stub. If test passes on empty code, spec is invalid. |
+| **4. Delta Blocker Exemption** | Builder annotates blocked AC in task manifest; `verify` skips blocked test and alerts planner. |
 
-See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+### Pattern 1: Cryptographic Spec Locking (Anti-Tampering)
+- **Mechanism:** When `@test-creator` generates `src/feature.spec.ts`, the harness computes its SHA-256 hash and records it in `.harness/tasks/task-XXX.md` under `specChecksum: "sha256-..."`.
+- **Enforcement:** During `harness verify <taskId>`, the CLI verifies `sha256(testFile) === manifest.specChecksum`.
+- **Result:** If `@builder` alters an assertion (e.g., changing `expect(res.status).toBe(200)` to `toBe(500)`), the gate fails immediately before running tests.
 
-## Seams: where tests go
+### Pattern 2: Dual-Tier Test Separation
+- **Tier 1 — Living Acceptance Spec (`*.spec.ts` / `*.contract.ts`)**: Authored exclusively by `@test-creator`. Mapped 1:1 to Gherkin ACs. Locked and read-only for `@builder`.
+- **Tier 2 — Internal Unit Tests (`*.unit.ts`)**: Authored by `@builder` for internal helpers, regex math, or refactoring safety. `@builder` has full write access.
 
-A **seam** is the public boundary you test at: the interface where you observe behavior without reaching inside. Tests live at seams, never against internals.
+### Pattern 3: Negative-Proof Mutation Preflight
+Before `@builder` begins coding, run the acceptance test against the untouched/stubbed codebase. The test **must fail** (Exit Code ≠ 0). If the test passes before any code is written, `@test-creator` wrote a tautology or vacuum test, and the task must be rejected.
 
-**Test only at pre-agreed seams.** Before writing any test, write down the seams under test and confirm them with the user. No test is written at an unconfirmed seam. You can't test everything, so agreeing the seams up front is how testing effort lands on the critical paths and complex logic instead of every edge case.
+### Pattern 4: Mid-Implementation Blockers Cleanly
+When `@builder` discovers an AC cannot be satisfied without modifying the read-only test suite, it **must not hack the test**. Instead, follow the Blocker Annotation Protocol:
 
-Ask: "What's the public interface, and which seams should we test?"
+1. **Annotate the Manifest**: Add a `blockers` entry to `.harness/tasks/task-XXX.md` marking the specific AC and reason. Change status to `BLOCKED_PARTIAL`.
+2. **Partial Verification Gate**: Run `harness verify <taskId> --allow-blocked`. The CLI executes unblocked tests while skipping blocked tests.
+3. **Planner Triage**: The task status becomes `NEEDS_PLANNER_REVIEW` for the `@planner` to evaluate the blocker and revise the PRD or upstream dependencies.
 
-When the shape of that interface is itself in question (how deep the module is, where the seam belongs, what the interface should expose), call the Skill tool with "codebase-design" for the vocabulary. It is the shared source of the module, interface, depth, seam, adapter, leverage and locality terms, and it is a reference to consult, not a session to run.
+---
+
+## Top Ecosystem Practices (`skills.sh`)
+
+When generating tests, incorporate these battle-tested standards from the open agent ecosystem:
+
+1. **Vertical Behavior-Focused Slices** (inspired by `mattpocock/skills/tdd`)
+   - Test only at pre-agreed API "seams". A seam is the public boundary where you observe behavior without reaching inside.
+   - Do not write horizontal slice tests (testing shapes over behavior).
+2. **Pre-Implementation Verification** (inspired by `owainlewis/blueprint/tdd`)
+   - Never write implementation code until you have witnessed the test fail EXACTLY the way you expect.
+   - Avoid testing low-value formatting details.
+3. **Strict Loop Constraints** (inspired by `obra/superpowers/tdd`)
+   - **Red before green**: Write failing test first, then only enough code to pass it.
+   - **One slice at a time**: One seam, one test, one minimal implementation.
+   - Refactoring is strictly a post-green step. Do not refactor while trying to turn a test green.
 
 ## Anti-patterns
 
-- **Implementation-coupled**: mocks internal collaborators, tests private methods, or verifies through a side channel (querying the database instead of using the interface). The tell: the test breaks when you refactor but behavior hasn't changed.
-- **Tautological**: the assertion recomputes the expected value the way the code does (`expect(add(a, b)).toBe(a + b)`, a snapshot derived by hand the same way, a constant asserted equal to itself), so it passes by construction and can never disagree with the code. Expected values must come from an independent source of truth: a known-good literal, a worked example, the spec.
-- **Horizontal slicing**: writing all tests first, then all implementation. Bulk tests verify _imagined_ behavior: you test the _shape_ of things rather than user-facing behavior, the tests go insensitive to real changes, and you commit to test structure before understanding the implementation. Work in **vertical slices** instead: one test → one implementation → repeat, each test a **tracer bullet** that responds to what the last cycle taught you.
-
-## Rules of the loop
-
-- **Red before green.** Write the failing test first, then only enough code to pass it. Don't anticipate future tests or add speculative features.
-- **One slice at a time.** One seam, one test, one minimal implementation per cycle.
-- **Refactoring is not part of the loop.** It belongs to the review stage (see the `code-review` skill), not the red → green implementation cycle.
+- **Implementation-coupled**: Mocks internal collaborators, tests private methods. The tell: the test breaks when you refactor but behavior hasn't changed.
+- **Tautological**: The assertion recomputes the expected value the way the code does (`expect(add(a, b)).toBe(a + b)`), passing by construction. Expected values must come from an independent source of truth (literal/spec).

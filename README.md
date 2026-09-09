@@ -1,6 +1,6 @@
 # AI Workflow Harness (`ai-workflow-harness`)
 
-A standardized, token-efficient, tool-agnostic AI development meta-framework for TypeScript and Go projects. Built for high context hygiene, deterministic verification gates, living executable specs, and 2-mode development discipline.
+A standardized, token-efficient, tool-agnostic AI development meta-framework for TypeScript and Go projects. Built for high context hygiene, deterministic verification gates, living executable specs, and a strict 3-mode Clean-Room development discipline.
 
 ---
 
@@ -8,7 +8,7 @@ A standardized, token-efficient, tool-agnostic AI development meta-framework for
 
 For detailed architectural deep dives, command guides, and framework specifications, see:
 
-- 🏛️ **[System Architecture & Design](file:///home/chu/AI-project/ai-workflow-harness/docs/HARNESS_ARCHITECTURE_HANDOVER.md)** — Core operating philosophy, 2-agent separation, and living specs.
+- 🏛️ **[System Architecture & Design](file:///home/chu/AI-project/ai-workflow-harness/docs/HARNESS_ARCHITECTURE_HANDOVER.md)** — Core operating philosophy, 3-agent Dual-Role Separation, and living specs.
 - ⚡ **[CLI Command Reference](file:///home/chu/AI-project/ai-workflow-harness/docs/cli-commands.md)** — Lean CLI entrypoint guide for `init` and `verify <taskId>`.
 - 🔄 **[Planning & Execution Diagrams](file:///home/chu/AI-project/ai-workflow-harness/docs/diagrams/01-end-to-end-lifecycle.md)** — Lifecycle maps, JIT spec slicing, and verification gates.
 - 🔒 **[Security & Verification Gates](file:///home/chu/AI-project/ai-workflow-harness/docs/security-and-gates.md)** — Boundary enforcement, ErrorSanitizer cards, AST validation, and 3-strike circuit breaker rollback.
@@ -21,14 +21,14 @@ For detailed architectural deep dives, command guides, and framework specificati
 When AI agents work on complex software projects without guardrails, they encounter three core failure modes:
 
 1. **Context Loss & Pollution:** Unstructured chat sessions accumulate thousands of lines of raw code, causing token costs to explode and AI models to forget architectural invariants.
-2. **Hallucinated Regressions & Broken Files:** Models modify arbitrary files outside their assigned scope, breaking unmonitored packages.
+2. **Hallucinated Regressions & Test Tampering:** Models modify arbitrary files outside their assigned scope or secretly alter tests to pass broken implementations.
 3. **Uncontrolled Retries:** Failing tests exhaust context windows as agents blindly retry without error compression or automatic rollbacks.
 
 ### Core Architecture Solutions:
-- **2-Mode System Architecture:** Separation of concerns between `@planner` (Discovery & JIT Spec Slicing) and stack-specific `@builder` agents (`@web-builder`, `@mobile-builder`, `@backend-builder`).
+- **Clean-Room Specification (Dual-Role Pattern):** Complete separation of concerns between the `@planner` (Discovery), the `@test-creator` (who writes cryptographically-locked Acceptance Criteria specs), and stack-specific `@builder` agents who implement the code but cannot touch the tests.
 - **Living Executable Specs:** Type contracts (`*.contract.ts`) and functional/UI component specs (`*.spec.ts`, `*.spec.tsx`) replace static prose Markdown and ASCII block wireframes.
 - **Atomic Task Boundary Enforcement:** Agents execute atomic tasks (`task-XXX.md`) constrained to $\le 2$ implementation code files + 1 test spec file (max 3 total).
-- **Deterministic Verification Gate (`harness verify <taskId>`):** Enforces file boundaries, executes AST syntax validation, runs verification test suites, sanitizes error logs, and manages a 3-strike circuit breaker.
+- **Deterministic Verification Gate (`harness verify <taskId> [--allow-blocked]`):** Enforces file boundaries, executes AST syntax validation, mathematically verifies the test spec checksum (Anti-Tampering), runs the test suite, and sanitizes error logs.
 - **3-Strike Circuit Breaker:** Automatically rolls back working tree edits after 3 consecutive verification failures to prevent working tree corruption.
 
 ---
@@ -82,11 +82,12 @@ bun run --cwd packages/cli dev verify task-001
 
 ---
 
-## 4. 2-Mode Agent Roles & Model Strategy
+## 4. 3-Mode Agent Roles & Model Strategy
 
 | Role | Mode | Purpose |
 | :--- | :--- | :--- |
 | **@planner** | Primary Architect | Architecture planning, living spec slicing, and task manifest creation. |
+| **@test-creator** | Spec Author | Generates read-only `*.spec.ts` files that are cryptographically locked by the framework. |
 | **@web-builder** | Subagent Executor | Executes React/Web frontend task manifests within declared file boundaries. |
 | **@mobile-builder** | Subagent Executor | Executes React Native task manifests within declared file boundaries. |
 | **@backend-builder** | Subagent Executor | Executes Node/Go/Python API & database implementation task manifests. |

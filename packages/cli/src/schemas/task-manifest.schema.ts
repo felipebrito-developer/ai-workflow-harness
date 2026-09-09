@@ -4,6 +4,8 @@ export const TaskModeSchema = z.enum(["VARIANT_A", "VARIANT_B"]);
 export const TaskStatusSchema = z.enum([
 	"TODO",
 	"IN_PROGRESS",
+	"BLOCKED_PARTIAL",
+	"NEEDS_PLANNER_REVIEW",
 	"BLOCKED",
 	"DONE",
 ]);
@@ -17,9 +19,10 @@ export const TaskFrontmatterSchema = z.object({
 	feature_ref: z.string().min(1),
 	depends_on: z.array(z.string()).default([]),
 	type: TaskTypeSchema.default("task"),
+	specChecksum: z.string().optional(),
 });
 
-function isTestFile(filePath: string): boolean {
+export function isTestFile(filePath: string): boolean {
 	const lower = filePath.toLowerCase();
 	const filename = lower.split("/").pop() || lower;
 	return (
@@ -44,6 +47,14 @@ export const TaskManifestSchema = z
 		verificationCommands: z
 			.array(z.string())
 			.min(1, "At least one verification command is required"),
+		blockers: z
+			.array(
+				z.object({
+					ac: z.string(),
+					reason: z.string(),
+				}),
+			)
+			.optional(),
 	})
 	.superRefine((data, ctx) => {
 		const type = data.frontmatter.type || "task";

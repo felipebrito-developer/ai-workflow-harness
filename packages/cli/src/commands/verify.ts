@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import chalk from "chalk";
@@ -8,6 +9,7 @@ import { CircuitBreaker } from "../engines/circuit-breaker.js";
 import { ConfigManager } from "../engines/config-manager.js";
 import { ErrorSanitizer } from "../engines/error-sanitizer.js";
 import { GitManager } from "../engines/git-manager.js";
+import { isTestFile } from "../schemas/task-manifest.schema.js";
 import { parseTaskManifest } from "../parsers/task-parser.js";
 import type { HarnessConfig } from "../schemas/harness-config.schema.js";
 
@@ -22,7 +24,15 @@ function parseCommandArgs(cmd: string): string[] {
 	});
 }
 
-export async function runVerify(taskId: string): Promise<void> {
+async function computeSha256(filePath: string): Promise<string> {
+	const content = await fs.readFile(filePath, "utf-8");
+	return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+export async function runVerify(
+	taskId: string,
+	options: { allowBlocked?: boolean } = {},
+): Promise<void> {
 	const taskFilePath = path.join(
 		process.cwd(),
 		".harness",
@@ -41,6 +51,46 @@ export async function runVerify(taskId: string): Promise<void> {
 		cfg = await ConfigManager.load();
 	} catch {}
 	const configLimit = cfg?.circuitBreakerLimit || 3;
+
+	// 2a. Anti-Tampering Spec Lock
+	if (manifest.frontmatter.specChecksum) {
+		const testFile = manifest.allowedFiles.find(isTestFile);
+		if (!testFile) {
+			console.error(
+				chalk.bold.red(
+					"🚨 TAMPERING DETECTED: Task has a specChecksum but no test file is declared in allowedFiles.",
+				),
+			);
+			process.exit(1);
+		}
+		
+		const testFilePath = path.resolve(process.cwd(), testFile);
+		try {
+			const currentChecksum = await computeSha256(testFilePath);
+			if (currentChecksum !== manifest.frontmatter.specChecksum) {
+				console.error(
+					chalk.bold.red(
+						"🚨 TAMPERING DETECTED: Acceptance test file was modified by builder. Checksums do not match.",
+					),
+				);
+				console.error(chalk.red(`Expected: ${manifest.frontmatter.specChecksum}`));
+				console.error(chalk.red(`Actual:   ${currentChecksum}`));
+				process.exit(1);
+			}
+			console.log(chalk.green("✔ Cryptographic Spec Lock valid."));
+		} catch (err: any) {
+			console.error(
+				chalk.bold.red(
+					`🚨 TAMPERING DETECTED: Failed to verify test file checksum: ${err.message}`,
+				),
+			);
+			process.exit(1);
+		}
+	}
+
+	if (options.allowBlocked) {
+		console.log(chalk.yellow("⚠️  Running in Partial Verification Mode (--allow-blocked)."));
+	}
 
 	// 2. Validate Boundary Compliance
 	const boundaryCheck = await GitManager.validateFileBoundaries(
@@ -161,11 +211,16 @@ export async function runVerify(taskId: string): Promise<void> {
 		}
 	}
 
-	// All passed: Step 4 - Update task frontmatter status to DONE & reset attempt counters
+	// All passed: Step 4 - Update task frontmatter status
+	let newStatus = "DONE";
+	if (options.allowBlocked && manifest.frontmatter.status === "BLOCKED_PARTIAL") {
+		newStatus = "NEEDS_PLANNER_REVIEW";
+	}
+
 	try {
 		const raw = await fs.readFile(taskFilePath, "utf-8");
 		const parsed = matter(raw);
-		parsed.data.status = "DONE";
+		parsed.data.status = newStatus;
 		await fs.writeFile(
 			taskFilePath,
 			matter.stringify(parsed.content, parsed.data),
@@ -173,15 +228,24 @@ export async function runVerify(taskId: string): Promise<void> {
 		);
 	} catch (writeErr: any) {
 		console.error(
-			chalk.red(`Failed to update task status to DONE: ${writeErr.message}`),
+			chalk.red(`Failed to update task status to ${newStatus}: ${writeErr.message}`),
 		);
 	}
 
 	await CircuitBreaker.resetAttempts(taskId);
 	await GitManager.createAtomicTaskCommit(taskId, manifest.allowedFiles, taskFilePath);
-	console.log(
-		chalk.bold.green(
-			`\n✨ Task ${manifest.frontmatter.id} verified & marked DONE!\n`,
-		),
-	);
+	
+	if (newStatus === "DONE") {
+		console.log(
+			chalk.bold.green(
+				`\n✨ Task ${manifest.frontmatter.id} verified & marked DONE!\n`,
+			),
+		);
+	} else {
+		console.log(
+			chalk.bold.yellow(
+				`\n⚠️ Task ${manifest.frontmatter.id} verified partially & marked NEEDS_PLANNER_REVIEW.\n`,
+			),
+		);
+	}
 }

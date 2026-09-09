@@ -19,12 +19,12 @@ harness init
 
 ## 2. Verification Gate
 
-### `harness verify <taskId>`
-Runs verification test suite, checks file boundaries, sanitizes failure cards, and enforces the deterministic 3-strike circuit breaker.
+### `harness verify <taskId> [--allow-blocked]`
+Runs verification test suite, checks file boundaries, sanitizes failure cards, validates cryptographic spec locks, and enforces the deterministic 3-strike circuit breaker.
 ```bash
 harness verify task-001
 ```
 - **Boundary Enforcement:** Validates modified files against `allowedFiles` in `.harness/tasks/<taskId>.md` (max 2 code files + 1 test file).
-- **Error Sanitization:** Compresses runner error output to 5-15 line structured error cards.
+- **Anti-Tampering Check:** Computes the SHA-256 hash of the modified test spec to ensure the builder agent has not tampered with the cryptographically locked Acceptance Criteria.
+- **Partial Verification (`--allow-blocked`):** If a builder encounters a fundamental block in the specification, they may add a `blockers` list to the manifest. Running with `--allow-blocked` skips those tests and transitions the task to `NEEDS_PLANNER_REVIEW` instead of `DONE`.
 - **Circuit Breaker:** Automatically rolls back working tree changes if verification fails 3 consecutive times.
-- **Status Sync:** Updates task status to `DONE` and resets attempt counters upon verification pass.

@@ -1,4 +1,3 @@
-```markdown
 # 02. Executable Specifications & Slicing Pipeline (Tests-as-Docs)
 
 ```mermaid

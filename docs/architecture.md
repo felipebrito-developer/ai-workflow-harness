@@ -29,3 +29,24 @@ ai-workflow-harness/
 │   ├── templates/    # @harness/templates: Canonical agent configurations, skills & stack standards
 │   └── adapters/     # @harness/adapters: Tool transpilers for OpenCode, Antigravity, and Cursor
 ```
+
+---
+
+## 3. Clean-Room Specification (Dual-Role Pattern)
+
+The AI Workflow Harness uses a deterministic **Clean-Room Specification Pattern** to eliminate the primary risk in autonomous workflows: test tampering and false positives. This establishes a strict governance boundary between requirement definition and implementation.
+
+**1. Dual-Tier Test Scopes**
+- **Tier 1 (Acceptance Specs):** `*.spec.ts` files are owned exclusively by `@test-creator`. They serve as the read-only living spec mapped 1:1 to business acceptance criteria.
+- **Tier 2 (Unit Tests):** `*.unit.ts` files are owned by the `@builder` for internal mechanics and refactoring safety. `@builder` has write access here.
+
+**2. Cryptographic Spec Locking (Anti-Tampering)**
+When `@test-creator` produces a `*.spec.ts` file, the framework locks it via a SHA-256 hash stored in the task manifest (`specChecksum`). During `harness verify <taskId>`, the CLI mathematically guarantees that the builder has not altered any assertions to artificially pass the test.
+
+**3. Mutation Sanity Check (Negative Proof)**
+Before code is written, a preflight check ensures the acceptance tests fail on empty implementations. Tautological tests that pass before any code is written are rejected immediately.
+
+**4. Delta Blocker Exemption (Conflict Protocol)**
+If a `@builder` encounters a fundamental flaw in the spec or a blocked dependency, they may not modify the test. Instead, they annotate the task manifest with `blockers` and run `harness verify --allow-blocked`. The CLI skips the blocked tests, enforces the cryptographic hash on the unmodified spec, and shifts the status to `NEEDS_PLANNER_REVIEW` for triage.
+
+For a visual flowchart of this lifecycle, see [Clean-Room Specification Lifecycle](diagrams/05-clean-room-specification.md).
