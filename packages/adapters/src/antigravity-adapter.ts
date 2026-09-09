@@ -40,10 +40,14 @@ export class AntigravitySerializer {
 		];
 		const agents: Record<string, unknown> = {};
 		for (const agent of customAgents) {
+			// Antigravity defaults exclusively to Gemini models
+			const isSubagent = agent.mode === "subagent";
+			const antigravityModel = isSubagent ? "gemini-2.5-flash" : "gemini-2.5-pro";
+
 			agents[agent.name] = {
 				description: agent.description,
 				mode: agent.mode,
-				model: agent.provider.model,
+				model: antigravityModel,
 				systemPrompt: agent.systemPrompt,
 			};
 		}
