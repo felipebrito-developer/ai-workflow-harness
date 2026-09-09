@@ -32,7 +32,7 @@ export class AntigravitySerializer {
 			: config.stack;
 
 		const directives = [
-			"2-Mode Operating System Active: @planner (planning & spec slicing) and @builder (strict TDD task execution).",
+			"3-Mode Clean-Room Architecture Active: @planner (design), @test-creator (specs), and @builder (strict TDD task execution).",
 			"Never write application code when acting as @planner.",
 			"All code generation in @builder must strictly respect allowedFiles declared in task-XXX.md.",
 			"Always run verification via `harness verify <taskId>` or deterministic test commands.",
@@ -89,13 +89,14 @@ export class AntigravitySerializer {
 		return [
 			`# Antigravity Directive: ${config.projectName}`,
 			"",
-			`You are operating within the 2-Mode AI Workflow Harness framework for **${config.projectName}**.`,
+			`You are operating within the 3-Mode AI Workflow Harness framework for **${config.projectName}**.`,
 			"",
 			"## Operational Rules",
-			"1. **2-Mode System Architecture (@planner & @builder):**",
-			"   - Use \`@planner\` for system design, architectural slicing, living spec generation, and task manifest creation.",
-			"   - Never write application implementation source code when acting as \`@planner\`.",
+			"1. **3-Mode Clean-Room Architecture (@planner, @test-creator, & @builder):**",
+			"   - Use \`@planner\` for system design, architectural slicing, and task manifest creation.",
+			"   - Use \`@test-creator\` to draft the living specs and tests based on the task constraints.",
 			"   - Use \`@builder\` for strict TDD implementation of task manifests.",
+			"   - Never write application implementation source code when acting as \`@planner\` or \`@test-creator\`.",
 			"",
 			"2. **Task Boundary Enforcement:**",
 			"   - All code generation in \`@builder\` mode must strictly respect \`allowedFiles\` declared in \`.harness/tasks/task-XXX.md\`.",
