@@ -371,6 +371,7 @@ describe("E2E Init Lifecycle — React Web + OpenRouter + 3-Mode Clean-Room", ()
 			"core/skill-harness.md",
 			"core/skill-caveman.md",
 			"core/skill-context-caching.md",
+			"core/skill-preflight.md",
 			"stack/skill-tailwind-shadcn.md",
 			"stack/skill-tanstack-query.md",
 			"stack/skill-expo-router.md",
