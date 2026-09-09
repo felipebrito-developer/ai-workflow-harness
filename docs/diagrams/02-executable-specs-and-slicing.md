@@ -11,9 +11,9 @@ flowchart LR
         B --> C["Define Discriminated State Unions<br/>(IDLE | LOADING | ERROR | SUCCESS)"]
     end
 
-    subgraph LivingDocs ["Living Executable Specs (Zero Prose Markdown)"]
+    subgraph LivingDocs ["Living Executable Specs (@test-creator)"]
         C --> D["1. Structural Contract<br/>(*.contract.ts / Zod Schemas)"]
-        D --> E["2. Behavioral Spec Test<br/>(*.spec.ts / *.spec.tsx)"]
+        D --> E["2. Acceptance Spec Test<br/>(*.spec.ts / *.spec.tsx)"]
     end
 
     subgraph TaskManifest ["Atomic Task Slicing"]
